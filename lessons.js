@@ -74,11 +74,7 @@ const basics = [
       translationHeading: 'Number',
       examples: numbersTo20.slice(0, 11).map((word, number) => [word, String(number)]),
     }],
-    sections: [
-      { title: 'Choose the German word for each number.', promptLanguage: 'en', choices: ['null', 'zwei', 'sieben', 'zehn'], questions: [
-        ['Which word means 2?', 'zwei'], ['Which word means 7?', 'sieben'],
-      ] },
-    ],
+    sections: [],
   },
   {
     title: 'Everyday words',
@@ -90,11 +86,7 @@ const basics = [
         ['ich', 'I'], ['du', 'you, when talking to one person informally'],
       ],
     }],
-    sections: [
-      { title: 'Choose the German word.', promptLanguage: 'en', choices: ['ja', 'nein', 'bitte', 'danke'], questions: [
-        ['How do you say “yes”?', 'ja'], ['How do you say “thank you”?', 'danke'],
-      ] },
-    ],
+    sections: [],
   },
   {
     title: 'Hello and goodbye',
@@ -106,12 +98,7 @@ const basics = [
         ['Guten Abend!', 'Good evening!'], ['Tschüss!', 'Bye!'],
       ],
     }],
-    sections: [
-      { title: 'Choose a greeting or goodbye.', promptLanguage: 'en', choices: ['Hallo!', 'Guten Morgen!', 'Guten Abend!', 'Tschüss!'], questions: [
-        ['How do you say “Good morning”?', 'Guten Morgen!', 'Morgen means morning here.'],
-        ['How do you say “Bye” to a friend?', 'Tschüss!'],
-      ] },
-    ],
+    sections: [],
   },
   {
     title: 'Name and hometown',

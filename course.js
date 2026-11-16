@@ -72,8 +72,7 @@ function lessonQuestions(lesson) {
   });
   const basicsLesson = lesson.group.route === 'basics';
   const examples = vocabularyQuestions(basicsLesson ? lesson.teaching : lesson.teaching.filter(block => block.assess));
-  const questions = basicsLesson && lesson.index !== 4 ? examples : [...activities, ...examples];
-  return questions.map((question, index) => ({ ...question, id: index + 1 }));
+  return [...activities, ...examples].map((question, index) => ({ ...question, id: index + 1 }));
 }
 
 function sampleQuestions(questions, limit) {

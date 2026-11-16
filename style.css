@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Instrument Serif';
-  src: url('instrument-serif.woff2') format('woff2');
+  src: url('fonts/instrument-serif.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }
@@ -128,7 +128,7 @@ main:focus { outline: none; }
 .quiz-feedback { margin-bottom: .5rem; }
 fieldset { border: 0; padding: 0; margin: 1.6rem 0; min-width: 0; }
 legend { padding: 0; margin-bottom: .65rem; font-weight: 750; font-size: 1.13rem; }
-.questions, .prompts { display: grid; gap: .65rem; }
+.questions { display: grid; gap: .65rem; }
 .question { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 1fr); align-items: center; gap: .35rem 1rem; }
 .question label { line-height: 1.35; }
 .exercise .question { align-items: start; }
@@ -156,7 +156,6 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .order-output { min-height: 3.6rem; padding: .4rem; margin: .45rem 0; border-radius: .4rem; background: var(--paper); }
 .order-output:empty::before { content: 'Choose tiles to build your answer.'; padding-left: .35rem; color: var(--muted); }
 .order-output button { background: var(--lime); }
-.actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 .hobby-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
 .hobby-grid .question { display: block; }
 .hobby-grid img { display: block; width: 100%; aspect-ratio: 1.45; object-fit: cover; border-radius: .35rem; margin-bottom: .4rem; }

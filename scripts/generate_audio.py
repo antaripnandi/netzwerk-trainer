@@ -1,4 +1,8 @@
-"""Build the site's German MP3s with Piper (Thorsten) and FFmpeg."""
+"""Build the German practice clips with Node.js, FFmpeg, and Python with piper-tts.
+
+Voice: https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/high
+Run: python scripts/generate_audio.py path/to/de_DE-thorsten-high.onnx
+"""
 
 import argparse
 import json
@@ -38,7 +42,7 @@ def speech_text(text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("model", type=Path, help="Path to the Piper ONNX model, beside its .onnx.json file")
     parser.add_argument("--force", action="store_true", help="Regenerate existing MP3 files")
     args = parser.parse_args()

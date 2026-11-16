@@ -1,11 +1,5 @@
 # Netzwerk Trainer
 
-Open `index.html` in a browser or serve the folder as a static site.
+We’re Die Rächer. We made this website for a college project to practice beginner German. It covers the basics and the first two chapters of *Netzwerk neu A1.1*.
 
-The German pronunciation clips in `audio/` use the [Thorsten high-quality German voice](https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/high), trained on CC0 recordings. The clips play directly in the browser. When adding or changing lesson audio, use Node.js, FFmpeg, and Python with `piper-tts` installed:
-
-```sh
-python scripts/generate_audio.py path/to/de_DE-thorsten-high.onnx
-```
-
-Keep the model's `.onnx.json` beside the model. Use `--force` to rebuild existing clips.
+Open `index.html` in a browser and choose **Start from zero**. The lessons explain things in English, let you hear German at normal or slow speed, and end with a short quiz.
