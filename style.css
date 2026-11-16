@@ -179,6 +179,20 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .person h2 { font: 400 2rem 'Instrument Serif', Georgia, serif; margin-bottom: .35rem; }
 .translation { margin-top: .55rem; color: var(--muted); font-size: .9rem; }
 .person:nth-child(2n) { background: var(--peach); }
+.story-reader { max-width: 44rem; margin: 0 auto; }
+.story-picker { display: grid; gap: .35rem; margin-bottom: 1rem; font-weight: 650; }
+.story-picker select { background: var(--white); }
+.dialogue { list-style: none; margin: 1rem 0 0; padding: 0; }
+.dialogue li { padding: .7rem 0; }
+.dialogue li + li { margin-top: .15rem; }
+.dialogue strong { color: var(--green); font-size: .9rem; }
+.dialogue [lang="de"] { font-size: 1.12rem; }
+.dialogue .translation { margin-top: .15rem; }
+.story-quiz, .story-cast, .story-steps { margin-top: 1rem; }
+.story-quiz[open] > summary, .story-cast[open] > summary { margin-bottom: .75rem; }
+.story-quiz > summary { display: list-item; list-style-position: inside; width: fit-content; cursor: pointer; }
+.story-cast > summary { cursor: pointer; font-weight: 650; }
+.story-steps { justify-content: space-between; flex-wrap: wrap; }
 
 dialog { position: fixed; inset: 0 0 0 auto; width: min(100%, 57rem); height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; padding: 1.1rem clamp(1rem, 4vw, 2rem) 3rem; color: var(--ink); background: var(--white); }
 dialog::backdrop { background: #1f261a90; }

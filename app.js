@@ -335,17 +335,57 @@ function lessonPage(lesson) {
   </div>`;
 }
 
-function storyPage() {
+function storyPage(index) {
+  const scene = storyScenes[index];
+  const number = index + 1;
+  const quizSection = {
+    ...scene,
+    title: scene.quizTitle || 'What happened in this scene?',
+    keys: scene.questions.map((_, question) => questionKey(`wg-${index}`, question)),
+  };
   return `<h1 class="page-title" lang="de">Die Netzwerk-WG</h1>
-    <p class="intro">WG stands for ${german('Wohngemeinschaft')}, a shared apartment. Meet the roommates and answer questions about their first five scenes.
-      <a href="${storySource}" target="_blank" rel="noopener">Read the German transcript (PDF)</a>
-    </p>
-    <div class="people">${roommates.map(([name, bio, translation]) => `<article class="person">
-      <img src="photos/${name.toLowerCase()}.webp" alt="" width="162" height="184">
-      <h2>${name}</h2><p lang="de">${bio}</p><p class="translation">${translation}</p>
-    </article>`).join('')}</div>
-    ${exercise('Roommate quiz', storyQuiz, 'wg')}
-    <p class="reference-source">Photos from ${german('Netzwerk neu A1, Kursbuch')}, © Ernst Klett Sprachen.</p>`;
+    <p class="intro">WG stands for ${german('Wohngemeinschaft')}, a shared apartment. Read each German line with its English translation underneath, then try the scene quiz.</p>
+    <div class="story-reader">
+      <div class="story-picker">
+        <label for="story-scene">Choose a scene</label>
+        <select id="story-scene">
+          ${Array.from({ length: 6 }, (_, i) => `<optgroup label="Chapter ${i + 1}">
+            ${storyScenes.map((item, sceneIndex) => item.chapter !== i + 1 ? '' :
+              `<option value="${sceneIndex + 1}" ${sceneIndex === index ? 'selected' : ''}>${sceneIndex + 1}. ${escapeHtml(item.title)}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select>
+      </div>
+      <section class="activity" aria-labelledby="scene-title">
+        <h2 id="scene-title">Scene ${number} · ${escapeHtml(scene.title)}</h2>
+        <ol class="dialogue" role="list">
+          ${scene.lines.map(([speaker, line, translation]) => `<li>
+            <strong>${escapeHtml(speaker)}</strong>
+            <p lang="de">${escapeHtml(line)}</p>
+            <p class="translation">${escapeHtml(translation)}</p>
+          </li>`).join('')}
+        </ol>
+        ${scene.note ? `<p class="hint">${escapeHtml(scene.note)}</p>` : ''}
+      </section>
+      <details class="story-quiz">
+        <summary class="primary">Start scene quiz</summary>
+        ${exercise('Scene quiz', [quizSection], `wg-scene-${index}`)}
+      </details>
+      <nav class="story-steps" aria-label="Scene navigation">
+        ${index > 0 ? `<a class="secondary" href="#wg-story/${number - 1}">← Previous scene</a>` : ''}
+        ${number < storyScenes.length ? `<a class="secondary" href="#wg-story/${number + 1}">Next scene →</a>` : ''}
+      </nav>
+    </div>
+    <details class="story-cast">
+      <summary>Meet the roommates</summary>
+      <div class="people">${roommates.map(([name, bio, translation]) => `<article class="person">
+        <img src="photos/${name.toLowerCase()}.webp" alt="" width="162" height="184">
+        <h2>${name}</h2><p lang="de">${bio}</p><p class="translation">${translation}</p>
+      </article>`).join('')}</div>
+      <p class="reference-source">Photos from ${german('Netzwerk neu A1, Kursbuch')}, © Ernst Klett Sprachen.</p>
+    </details>
+    <p class="reference-source">Short practice dialogues adapted from ${german('Netzwerk neu A1')}, Chapters 1–6.
+      <a href="${storySource}" target="_blank" rel="noopener">Klett’s original German transcript (PDF)</a>
+    </p>`;
 }
 
 function newDrill() {
@@ -466,7 +506,9 @@ function showPage(moveFocus = true) {
   const group = courseGroups.find(group => group.route === route);
   const lesson = group ? group.lessons.find(lesson => !passed.has(lesson.route)) || group.lessons[0] :
     coursePath.find(lesson => lesson.route === route);
-  const page = lesson?.route || (['wg-story', 'daily-drill'].includes(route) ? route : 'home');
+  const storyRoute = route.match(/^wg-story(?:\/([1-9]\d*))?$/);
+  const scene = storyRoute ? Math.min(Number(storyRoute[1] || 1), storyScenes.length) : 0;
+  const page = lesson?.route || (scene ? `wg-story/${scene}` : route === 'daily-drill' ? route : 'home');
   if (page !== currentPage) {
     stopAudio();
     referenceLink.hidden = false;
@@ -476,9 +518,9 @@ function showPage(moveFocus = true) {
     if (lesson) {
       showLesson(false);
     } else {
-      content.innerHTML = page === 'wg-story' ? storyPage() : page === 'daily-drill' ? drillPage() : homePage();
+      content.innerHTML = scene ? storyPage(scene - 1) : page === 'daily-drill' ? drillPage() : homePage();
     }
-    const parentPage = lesson?.group.route || page;
+    const parentPage = lesson?.group.route || (scene ? 'wg-story' : page);
     document.querySelectorAll('.header-inner nav a').forEach(link => {
       if (link.hash === `#${parentPage}`) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
@@ -791,6 +833,8 @@ content.addEventListener('input', event => {
   if (input.name === 'audio-speed') {
     audioRate = Number(input.value);
     player.playbackRate = audioRate;
+  } else if (input.id === 'story-scene') {
+    location.hash = `wg-story/${input.value}`;
   } else if (input.id === 'hobby' || input.id === 'preference') {
     const slider = document.querySelector('#preference');
     const rating = preferenceRatings[slider.value];

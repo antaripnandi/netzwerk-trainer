@@ -475,7 +475,7 @@ const courses = {
   Zumba: ['Montag', 'Mittwoch'],
 };
 
-// Story details checked against Klett's transcript for scenes 1–5.
+// Short, independently worded readings based on Klett's scenes, with English below each line.
 const storySource = 'https://www.klett-sprachen.es/downloads/21455/netzwerk-neu-a1-transkript-videos-kursbuch-kapitel-1-6/pdf';
 const roommates = [
   ['Anna', 'Aus Hannover. Sie ist neu in der WG und studiert.', 'From Hanover. She’s a student and the newest roommate.'],
@@ -483,28 +483,201 @@ const roommates = [
   ['Luca', 'Aus München. Er arbeitet als Krankenpfleger.', 'From Munich. He works as a nurse.'],
   ['Max', 'Er ist oft in der Uni und schwimmt gern.', 'He’s often at the university and likes swimming.'],
 ];
-const storyQuiz = [
-  { title: 'Scene 1 · Anna arrives', choices: ['Luca', 'Bea', 'Max'], questions: [
-    ['Wer bittet Anna in die Wohnung?', 'Luca', 'Who invites Anna into the apartment? Look for Komm rein! (“Come in!”) in the transcript.'],
-  ] },
-  { title: 'Scene 2 · Where is each roommate from?', choices: ['Berlin', 'Hannover', 'München'], questions: [
-    ['Woher kommt Anna?', 'Hannover', 'Where is Anna from? Check her profile above.'],
-    ['Woher kommt Bea?', 'Berlin', 'Where is Bea from? Check her profile above.'],
-    ['Woher kommt Luca?', 'München', 'Where is Luca from? Munich is München in German.'],
-  ] },
-  { title: 'Scene 3 · Match the phone numbers to the roommates.', choices: ['0151 89944583', '0154 76895321', '0171 341226691'], questions: [
-    ['Max', '0151 89944583', 'Bea shares Max’s number first in the transcript. It starts with 0151.'],
-    ['Anna', '0171 341226691', 'Anna gives her own number next. It starts with 0171.'],
-    ['Bea', '0154 76895321', 'Bea’s number is printed on page 16 of the textbook. It starts with 0154.'],
-  ] },
-  { title: 'Scene 4 · Plans to go swimming', choices: ['Freitag', 'Samstag', 'Montag'], questions: [
-    ['Wann wollen Anna und Max schwimmen gehen?', 'Montag', 'When do Anna and Max want to go swimming? Max suggests the first weekday after the weekend.'],
-  ] },
-  { title: 'Scene 5 · Work and free time', choices: ['Anna', 'Luca', 'Anna, Max und Luca'], questions: [
-    ['Wer arbeitet im Krankenhaus?', 'Luca', 'Who works at the hospital? Look at the nurse’s profile.'],
-    ['Wer macht ein Praktikum?', 'Anna', 'Who is doing an internship? The roommate who is a student mentions one.'],
-    ['Wer möchte am Montag zusammen schwimmen gehen?', 'Anna, Max und Luca', 'Who wants to go swimming together on Monday? Two people made the plan in Scene 4. In Scene 5, one more joins.'],
-  ] },
+const storyScenes = [
+  {
+    chapter: 1, title: 'Anna arrives',
+    lines: [
+      ['Anna', 'Wohnt Max hier? Ich suche seine WG.', 'Does Max live here? I’m looking for his shared apartment.'],
+      ['Frau Müller', 'Seine Wohnung ist auf der anderen Seite vom Flur.', 'His apartment is on the other side of the hall.'],
+      ['Luca', 'Hi, ich bin Luca. Du kannst schon mal reinkommen.', 'Hi, I’m Luca. You can come inside while you wait.'],
+      ['Bea', 'Schön, dass du da bist, Anna. Magst du Kaffee?', 'Glad you’re here, Anna. Would you like some coffee?'],
+      ['Anna', 'Ein Kaffee wäre toll, danke!', 'Coffee would be great, thanks!'],
+    ],
+    choices: ['Luca', 'Bea', 'Max'],
+    questions: [
+      ['Wer bittet Anna in die Wohnung?', 'Luca', 'Who invites Anna inside?'],
+      ['Wer bietet Anna Kaffee an?', 'Bea', 'Who offers Anna coffee?'],
+    ],
+  },
+  {
+    chapter: 1, title: 'Where is everyone from?',
+    lines: [
+      ['Anna', 'Ist Max noch unterwegs?', 'Is Max still out?'],
+      ['Luca', 'Er ist gerade an der Universität.', 'He’s at the university right now.'],
+      ['Anna', 'Für mich ist München neu. Meine Heimatstadt ist Hannover.', 'Munich is new to me. My hometown is Hanover.'],
+      ['Bea', 'Ich bin aus Berlin. Luca ist Münchner.', 'I’m from Berlin. Luca is from Munich.'],
+      ['Bea', 'Komm mit. Ich zeige dir dein Zimmer.', 'Come with me. I’ll show you your room.'],
+    ],
+    choices: ['Berlin', 'Hannover', 'München'],
+    questions: [
+      ['Woher kommt Anna?', 'Hannover', 'Where is Anna from?'],
+      ['Woher kommt Bea?', 'Berlin', 'Where is Bea from?'],
+      ['Woher kommt Luca?', 'München', 'Where is Luca from? Munich is München in German.'],
+    ],
+  },
+  {
+    chapter: 1, title: 'Exchanging phone numbers',
+    lines: [
+      ['Anna', 'Weißt du, wie ich Max anrufen kann?', 'Do you know how I can call Max?'],
+      ['Bea', 'Versuch es unter 0151 89944583.', 'Try him at 0151 89944583.'],
+      ['Anna', 'Gut! Du erreichst mich unter 0171 341226691.', 'Great! You can reach me at 0171 341226691.'],
+      ['Bea', 'Jetzt hast du auch meine Nummer.', 'Now you have my number too.'],
+      ['Anna', 'Wie schreibt man deinen Familiennamen?', 'How do you spell your last name?'],
+      ['Bea', 'Mein Nachname ist Kretschmar, mit K am Anfang.', 'My last name is Kretschmar, with a K at the start.'],
+    ],
+    note: 'Bea’s number in the textbook contact card is 0154 76895321.',
+    quizTitle: 'Match the roommates to their phone numbers',
+    choices: ['0151 89944583', '0154 76895321', '0171 341226691'],
+    questions: [
+      ['Max', '0151 89944583', 'Which number does Bea give Anna to call Max?'],
+      ['Anna', '0171 341226691', 'Which number does Anna give Bea?'],
+      ['Bea', '0154 76895321', 'Check Bea’s contact-card number below the dialogue.'],
+    ],
+  },
+  {
+    chapter: 2, title: 'A plan to go swimming',
+    lines: [
+      ['Anna', 'Spielst du gerade am Computer?', 'Are you playing a computer game right now?'],
+      ['Max', 'Ja, das macht mir Spaß. Welche Hobbys hast du?', 'Yes, I enjoy it. What hobbies do you have?'],
+      ['Anna', 'Ich mag Bücher und Kinofilme. Hast du Lust, mit mir schwimmen zu gehen?', 'I like books and movies. Would you like to go swimming with me?'],
+      ['Max', 'Gerne, aber ich habe erst am Montag Zeit.', 'I’d love to, but I’m only free on Monday.'],
+      ['Anna', 'Montag passt. Vielleicht hat Luca auch Lust.', 'Monday works. Maybe Luca would like to join too.'],
+    ],
+    choices: ['Freitag', 'Samstag', 'Montag'],
+    questions: [
+      ['Wann wollen Anna und Max schwimmen gehen?', 'Montag', 'When are Anna and Max planning to swim?'],
+    ],
+  },
+  {
+    chapter: 2, title: 'Working and studying',
+    lines: [
+      ['Anna', 'Du siehst müde aus, Luca. Woher kommst du gerade?', 'You look tired, Luca. Where have you just come from?'],
+      ['Luca', 'Von meiner Schicht im Krankenhaus. Ich habe heute Nacht gearbeitet.', 'From my shift at the hospital. I worked last night.'],
+      ['Anna', 'Ich gehe jetzt joggen. Heute Nachmittag bin ich im Ingenieurbüro. Dort mache ich mein Praktikum.', 'I’m going jogging now. I’ll be at the engineering office this afternoon. I’m doing my internship there.'],
+      ['Anna', 'Max und ich wollen am Montag ins Schwimmbad. Möchtest du mit?', 'Max and I want to go to the pool on Monday. Would you like to join?'],
+      ['Luca', 'Ja, am Montag arbeite ich nicht. Ich komme mit.', 'Yes, I’m off on Monday. I’ll join you.'],
+    ],
+    choices: ['Anna', 'Luca', 'Anna, Max und Luca'],
+    questions: [
+      ['Wer arbeitet im Krankenhaus?', 'Luca', 'Who works at the hospital?'],
+      ['Wer macht ein Praktikum?', 'Anna', 'Who is doing an internship?'],
+      ['Wer möchte am Montag zusammen schwimmen gehen?', 'Anna, Max und Luca', 'Who plans to go swimming together on Monday?'],
+    ],
+  },
+  {
+    chapter: 3, title: 'A tour of Munich',
+    lines: [
+      ['Anna', 'Können wir auf dem Weg zum Bad etwas von München sehen?', 'Can we see a bit of Munich on the way to the pool?'],
+      ['Luca', 'Klar. Zuerst fahren wir in den Englischen Garten. Dort steht der Chinesische Turm.', 'Sure. First we’ll go to the English Garden. That’s where the Chinese Tower is.'],
+      ['Luca', 'Hier am Eisbach kann man mitten in der Stadt surfen.', 'Here on the Eisbach, you can surf right in the middle of the city.'],
+      ['Anna', 'Oh, am Bad hängt ein Schild. Es ist wegen Bauarbeiten zu.', 'Oh, there’s a sign at the pool. It’s closed for construction work.'],
+      ['Luca', 'Dann können wir noch das Olympiastadion ansehen.', 'Then we can go see the Olympic Stadium too.'],
+    ],
+    choices: ['Das Schwimmbad', 'Das Olympiastadion', 'Der Englische Garten'],
+    questions: [['Was ist wegen Bauarbeiten geschlossen?', 'Das Schwimmbad', 'What is closed for construction work?']],
+  },
+  {
+    chapter: 3, title: 'Finding the market',
+    lines: [
+      ['Tourist', 'Können Sie mir den Weg zum Viktualienmarkt zeigen?', 'Can you show me the way to the Viktualienmarkt?'],
+      ['Luca', 'Gehen Sie bis zum Isartorplatz und dann durch das Tor.', 'Walk to Isartorplatz and then go through the gate.'],
+      ['Luca', 'Bleiben Sie auf der Straße Richtung Marienplatz. Kurz davor biegen Sie links ab.', 'Stay on the street toward Marienplatz. Turn left just before you reach it.'],
+      ['Tourist', 'Also vor dem Platz links. Vielen Dank!', 'So, left before the square. Thank you very much!'],
+    ],
+    choices: ['Nach links', 'Nach rechts', 'Zurück'],
+    questions: [['Wohin soll der Tourist vor dem Marienplatz abbiegen?', 'Nach links', 'Which way should the tourist turn before Marienplatz?']],
+  },
+  {
+    chapter: 4, title: 'Shopping for an apple cake',
+    lines: [
+      ['Bea', 'Habt ihr Lust auf Kaffee und Kuchen heute Nachmittag?', 'Would you like coffee and cake this afternoon?'],
+      ['Max', 'Wir könnten einen Kuchen mit Äpfeln backen.', 'We could bake a cake with apples.'],
+      ['Bea', 'Die Äpfel und die Butter sind schon da. Auf die Liste kommen Mehl, Eier und Zucker.', 'We already have the apples and butter. Put flour, eggs, and sugar on the list.'],
+      ['Luca', 'Anna, gehen wir einkaufen? Hoffentlich merken wir uns die Liste.', 'Anna, shall we go shopping? Hopefully we remember the list.'],
+    ],
+    choices: ['Mehl, Eier und Zucker', 'Äpfel und Butter', 'Kaffee und Milch'],
+    questions: [['Was steht auf der Liste für den Kuchen?', 'Mehl, Eier und Zucker', 'Which ingredients are on the list for the cake?']],
+  },
+  {
+    chapter: 4, title: 'Too much cake',
+    lines: [
+      ['Max', 'Schau mal, im Schrank sind noch Mehl und Zucker.', 'Look, there’s still flour and sugar in the cupboard.'],
+      ['Bea', 'Gut, dann fehlen uns nur Eier.', 'Good, then eggs are all we’re missing.'],
+      ['Max', 'Frau Müller, könnten Sie uns ein paar Eier geben?', 'Ms. Müller, could you give us a few eggs?'],
+      ['Anna', 'Wir sind zurück. Wir haben schon einen Kuchen gekauft!', 'We’re back. We already bought a cake!'],
+      ['Luca', 'Dann essen wir zusammen und bieten den Nachbarn etwas an.', 'Then we’ll eat together and offer some to the neighbors.'],
+    ],
+    choices: ['Eier', 'Mehl', 'Zucker'],
+    questions: [['Was möchte Max von Frau Müller?', 'Eier', 'What does Max ask Ms. Müller for?']],
+  },
+  {
+    chapter: 5, title: 'An early run and dinner plans',
+    lines: [
+      ['Anna', 'Schon sieben Uhr, Max. Zeit für unsere Runde im Park!', 'It’s already seven, Max. Time for our run in the park!'],
+      ['Max', 'Ich ziehe mich schnell an. Später kann ich einkaufen.', 'I’ll get dressed quickly. I can go shopping later.'],
+      ['Anna', 'Dann bring bitte Brot, Milch und Kaffee mit.', 'Then please bring back bread, milk, and coffee.'],
+      ['Max', 'Heute Abend koche ich für euch. Wir essen um halb acht.', 'Tonight I’ll cook for you all. We’ll eat at half past seven.'],
+    ],
+    choices: ['07:00 Uhr', '19:30 Uhr', '20:00 Uhr'],
+    questions: [['Für wann plant Max das Abendessen?', '19:30 Uhr', 'What time does Max plan dinner for?']],
+  },
+  {
+    chapter: 5, title: 'Waiting for Max',
+    lines: [
+      ['Luca', 'Ich habe Hunger. Ist Max in der Küche?', 'I’m hungry. Is Max in the kitchen?'],
+      ['Bea', 'Ich sehe ihn nicht. Vielleicht hat er geschrieben.', 'I don’t see him. Maybe he sent a message.'],
+      ['Max (message)', 'Ich schaffe es heute erst um acht nach Hause.', 'I won’t make it home until eight today.'],
+      ['Anna', 'Dann müssen wir wohl noch auf das Essen warten.', 'Then I guess we’ll have to wait for dinner a bit longer.'],
+    ],
+    choices: ['19:00 Uhr', '19:30 Uhr', '20:00 Uhr'],
+    questions: [['Wann kommt Max laut seiner Nachricht nach Hause?', '20:00 Uhr', 'According to his message, when will Max get home?']],
+  },
+  {
+    chapter: 5, title: 'Pizza instead',
+    lines: [
+      ['Bea', 'Ich will nicht länger warten. Eine Pizza wäre jetzt gut.', 'I don’t want to wait any longer. A pizza would be good right now.'],
+      ['Anna', 'Gute Idee. Dann bestellen wir etwas.', 'Good idea. Let’s order something.'],
+      ['Luca', 'Die Pizzen sind da. Welche ist für mich?', 'The pizzas are here. Which one is mine?'],
+      ['Max', 'Ihr habt schon gegessen? Entschuldigt, dass ich so spät bin. Morgen übernehme ich das Kochen.', 'You’ve eaten already? Sorry I’m so late. I’ll do the cooking tomorrow.'],
+    ],
+    choices: ['Pizza', 'Apfelkuchen', 'Schnitzel'],
+    questions: [['Was bestellen die Mitbewohner?', 'Pizza', 'What do the roommates order?']],
+  },
+  {
+    chapter: 6, title: 'A birthday surprise',
+    lines: [
+      ['Bea', 'Es ist fast zwei. Ist alles für Lucas Geburtstag fertig?', 'It’s nearly two. Is everything ready for Luca’s birthday?'],
+      ['Anna', 'Ja, der Kuchen steht schon auf dem Tisch.', 'Yes, the cake is already on the table.'],
+      ['Luca', 'Danke für den Kuchen. Heute bin ich aber ganz schön müde.', 'Thanks for the cake. I’m pretty tired today, though.'],
+      ['Max', 'Wir haben noch etwas für dich. Wir schauen jetzt deinen Lieblingsfilm.', 'We have something else for you. We’re going to watch your favorite movie now.'],
+      ['Luca', 'Dafür lade ich euch am Wochenende zum Essen ein.', 'In return, I’ll take you all out for dinner this weekend.'],
+    ],
+    choices: ['Seinen Lieblingsfilm', 'Ein Fußballspiel', 'Die Nachrichten'],
+    questions: [['Was wollen die Freunde mit Luca anschauen?', 'Seinen Lieblingsfilm', 'What are the friends planning to watch with Luca?']],
+  },
+  {
+    chapter: 6, title: 'Ordering at the restaurant',
+    lines: [
+      ['Luca', 'Meine Freunde kommen gleich. Ich möchte noch kurz warten.', 'My friends will be here soon. I’d like to wait a little longer.'],
+      ['Anna', 'Ich hätte gern Orangensaft, bitte.', 'I’d like orange juice, please.'],
+      ['Max', 'Für mich eine Schorle mit Apfelsaft, bitte.', 'An apple juice spritzer for me, please.'],
+      ['Luca', 'Wir teilen uns zuerst eine Vorspeisenplatte. Danach nehmen wir alle Schnitzel mit Bratkartoffeln.', 'First we’ll share a starter platter. Then we’ll all have schnitzel with fried potatoes.'],
+    ],
+    choices: ['Schnitzel mit Bratkartoffeln', 'Pizza mit Käse', 'Suppe mit Brot'],
+    questions: [['Was bestellt Luca als Hauptgericht?', 'Schnitzel mit Bratkartoffeln', 'What does Luca order as the main course?']],
+  },
+  {
+    chapter: 6, title: 'Bringing food home for Bea',
+    lines: [
+      ['Luca', 'Bea hat angerufen. Sie ist noch bei der Arbeit und kommt heute nicht ins Restaurant.', 'Bea called. She’s still at work and won’t make it to the restaurant today.'],
+      ['Kellnerin', 'Möchten Sie eine Rechnung für den ganzen Tisch?', 'Would you like one bill for the whole table?'],
+      ['Luca', 'Ja, wir zahlen alles zusammen.', 'Yes, we’ll pay for everything together.'],
+      ['Anna', 'Würden Sie den Rest bitte einpacken?', 'Would you wrap up the rest, please?'],
+      ['Max', 'So hat Bea später auch etwas zu essen.', 'That way Bea will have something to eat later too.'],
+    ],
+    choices: ['Sie arbeitet noch.', 'Sie ist im Kino.', 'Sie ist schon zu Hause.'],
+    questions: [['Warum kommt Bea nicht zum Essen?', 'Sie arbeitet noch.', 'Why can’t Bea make it to dinner?']],
+  },
 ];
 
 const greetingsReference = [
