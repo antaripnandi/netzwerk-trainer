@@ -280,9 +280,12 @@ function homePage() {
   const action = !next ? 'Review the course' :
     passed.size || [...solved].some(key => key.startsWith('quiz-')) ? 'Continue learning' : 'Start from zero';
   return `<section class="hero">
-    <h1>German from the beginning</h1>
-    <p>An English-guided trainer for ${german('Netzwerk neu')} A1.1. Learn the alphabet, numbers, and everyday phrases, then practice with short quizzes and German audio at normal or slow speed.</p>
-    <a class="primary hero-start" href="#${next?.route || 'basics/1'}">${action} →</a>
+    <div>
+      <h1 lang="de">Hallo, <span>Deutsch!</span></h1>
+      <p>Learn the German alphabet, numbers, and everyday words. Practice each lesson to unlock the next one.</p>
+      <a class="primary hero-start" href="#${next?.route || 'basics/1'}">${action} →</a>
+    </div>
+    <div class="word-art" aria-hidden="true"><span>Guten Tag!</span><span>Hallo!</span></div>
   </section>
   <section aria-labelledby="chapters-title">
     <h2 class="section-title" id="chapters-title">Choose a chapter</h2>

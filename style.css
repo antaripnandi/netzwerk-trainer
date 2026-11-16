@@ -60,11 +60,16 @@ main:focus { outline: none; }
 .site-footer { margin-top: auto; background: var(--white); }
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem 1.25rem; padding-block: 1.25rem; color: var(--muted); font-size: .9rem; }
 .footer-inner strong, .footer-inner a:hover { color: var(--ink); }
-.hero { padding: clamp(1.6rem, 5vw, 3.75rem); border-radius: .8rem; color: var(--white); background: var(--green); }
-.hero h1 { font: 400 clamp(2.8rem, 6.4vw, 5.25rem)/1 'Instrument Serif', Georgia, serif; letter-spacing: -.025em; text-wrap: pretty; }
-.hero p { max-width: 37rem; margin-top: 1rem; color: #e3e8d7; font-size: clamp(1rem, 2vw, 1.15rem); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(13rem, .47fr); align-items: center; gap: 2rem; padding: clamp(1.6rem, 5vw, 4.25rem); border-radius: 1.1rem; color: var(--white); background: var(--green); overflow: hidden; }
+.hero h1 { font: 400 clamp(3.05rem, 7.6vw, 6rem)/.96 'Instrument Serif', Georgia, serif; letter-spacing: -.04em; }
+.hero h1 span { color: var(--lime); }
+.hero p { max-width: 34rem; margin-top: 1.25rem; color: #e3e8d7; font-size: clamp(1rem, 2vw, 1.2rem); }
 .hero .hero-start { background: var(--lime); color: var(--ink); margin-top: 1.3rem; }
 .hero .hero-start:hover { background: #edf2b9; }
+.word-art { position: relative; height: 12rem; display: grid; place-content: center; font: 400 clamp(2.35rem, 4vw, 3.75rem)/1 'Instrument Serif', Georgia, serif; color: var(--ink); white-space: nowrap; }
+.word-art span { padding: .7rem 1.25rem .9rem; border-radius: .5rem; box-shadow: 0 8px 16px #111a1835; }
+.word-art span:first-child { background: var(--peach); transform: rotate(-9deg) translate(-.55rem, .2rem); }
+.word-art span:last-child { background: var(--lime); transform: rotate(7deg) translate(.8rem, -.05rem); }
 .section-title { margin: 2rem 0 .95rem; font-size: 1.45rem; }
 .chapters, .people, .reference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .chapter { display: grid; grid-template-rows: auto auto 1fr auto; padding: clamp(1.25rem, 3vw, 1.9rem); gap: .6rem; border-radius: .8rem; background: var(--lime); }
@@ -201,6 +206,8 @@ tbody th { font-weight: 650; }
   nav a { padding: .55rem .6rem; }
 }
 @media (max-width: 670px) {
+  .hero { grid-template-columns: 1fr; gap: .5rem; }
+  .word-art { height: 7.7rem; justify-content: end; padding-right: 1.25rem; }
   .workspace, .reference-grid { grid-template-columns: 1fr; }
   .topics { display: flex; overflow: auto; }
   .topics a { white-space: nowrap; }
