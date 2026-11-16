@@ -25,9 +25,8 @@ function vocabularyQuestions(blocks) {
     return examples.map(([word, meaning, audio]) => {
       if (translationHeading === 'Sounds like') {
         return {
-          heading: 'Identify the German letter.',
-          prompt: 'Which letter has the name ' + meaning.split(' · ')[0] + '?',
-          answer: word, audio, choices: alphabet, hint: meaning, english: true,
+          heading: 'Which letter did you hear?',
+          answer: word, audio, choices: alphabet, hint: meaning.split(' · ')[1],
         };
       }
       return {
@@ -68,14 +67,8 @@ function lessonQuestions(lesson) {
   return questions.map((question, index) => ({ ...question, id: index + 1 }));
 }
 
-function quizRounds(questions) {
-  const count = Math.ceil(questions.length / 10);
-  return Array.from({ length: count }, (_, i) =>
-    questions.slice(Math.floor(i * questions.length / count), Math.floor((i + 1) * questions.length / count)));
-}
-
-function testQuestions(questions) {
-  const count = Math.min(10, questions.length);
-  // Spread the questions across the lesson so a test checks more than its first topic.
+function sampleQuestions(questions, limit) {
+  const count = Math.min(limit, questions.length);
+  // Sample from across the lesson so a short quiz still covers different topics.
   return Array.from({ length: count }, (_, i) => questions[Math.floor((i + Math.random()) * questions.length / count)]);
 }

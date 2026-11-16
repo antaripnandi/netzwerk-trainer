@@ -54,10 +54,9 @@ const migrated = coursePath.filter(lesson => {
   return keys.length && keys.every(key => solved.has(key));
 });
 const passed = new Set(Array.isArray(savedCourse?.passed) ? savedCourse.passed : migrated.map(lesson => lesson.route));
-const practiceRounds = savedCourse?.rounds || {};
 
 function rememberCourse() {
-  try { localStorage.setItem(courseKey, JSON.stringify({ passed: [...passed], rounds: practiceRounds })); } catch {}
+  try { localStorage.setItem(courseKey, JSON.stringify({ passed: [...passed] })); } catch {}
 }
 if (!savedCourse) rememberCourse();
 
@@ -267,7 +266,7 @@ function exercise(title, sections, prefix) {
 function homePage() {
   const next = nextLesson();
   const action = !next ? 'Review the course' :
-    passed.size || Object.values(practiceRounds).some(Boolean) ? 'Continue learning' : 'Start from zero';
+    passed.size || [...solved].some(key => key.startsWith('quiz-')) ? 'Continue learning' : 'Start from zero';
   return `<section class="hero">
     <div>
       <h1 lang="de">Hallo, <span>Deutsch!</span></h1>
@@ -298,8 +297,7 @@ function lessonPage(lesson) {
   const open = unlocked(lesson);
   const view = open ? `${teachingHtml(lesson.teaching, lesson.sections.filter(section => section.kind === 'audio'))}
     <div class="row lesson-actions">
-      <button type="button" class="primary" data-course="practice">${finished ? 'Review lesson' :
-        practiceRounds[lesson.route] ? 'Continue practice' : 'Start practice'}</button>
+      <button type="button" class="primary" data-course="practice">${finished ? 'Review lesson' : 'Start practice'}</button>
       ${finished && group.number ? '<button type="button" class="secondary" data-course="extra">Extra activities</button>' : ''}
       ${finished && next ? `<a class="secondary" href="#${next.route}">Continue course →</a>` : ''}
     </div>` : `<p class="intro">This lesson unlocks after you complete ${escapeHtml(next.title)}.</p>
@@ -500,21 +498,18 @@ function pickOptions(question) {
   return shuffle([question.answer, ...shuffle(others).slice(0, 3)]);
 }
 
-function startQuiz(test, round = 0) {
+function startQuiz(test) {
   if (!currentLesson || !unlocked(currentLesson)) return;
   const bank = lessonQuestions(currentLesson);
-  const rounds = quizRounds(bank);
-  if (!test && !passed.has(currentLesson.route)) round = practiceRounds[currentLesson.route] || 0;
-  round = Math.min(round, rounds.length - 1);
-  const questions = shuffle(test ? testQuestions(bank) : rounds[round]);
-  quiz = { test, round, rounds: rounds.length, questions, total: questions.length, index: 0, correct: [], waiting: false };
+  const questions = shuffle(sampleQuestions(bank, test ? 10 : 8));
+  quiz = { test, questions, total: questions.length, index: 0, correct: [], waiting: false };
   renderQuiz();
 }
 
 function renderQuiz() {
   stopAudio();
   referenceLink.hidden = true;
-  const { questions, index, total, test, round, rounds, correct } = quiz;
+  const { questions, index, total, test } = quiz;
   const question = questions[index];
   let response;
   if (question.order) {
@@ -526,20 +521,19 @@ function renderQuiz() {
   } else {
     response = '<label for="quiz-answer" class="visually-hidden">Your answer</label><input id="quiz-answer" lang="de" type="text" name="answer" autocomplete="off" spellcheck="false">';
   }
-  const label = test ? `Question ${index + 1} of ${total} · 80% to pass` :
-    `${rounds > 1 ? `Round ${round + 1} of ${rounds} · ` : ''}${correct.length} of ${total} correct${index >= total ? ' · Retry' : ''}`;
+  const label = `Question ${index + 1} of ${total} · 80% to pass`;
   content.innerHTML = `<section class="activity quiz-card">
     <div class="lesson-heading">
       <p>${test ? 'Test out' : 'Practice'} · ${currentLesson.title}</p>
       <button class="secondary" type="button" data-course="learn">Back to lesson</button>
     </div>
     <p id="quiz-progress">${label}</p>
-    <progress aria-labelledby="quiz-progress" max="${total}" value="${test ? index : correct.length}"></progress>
+    <progress aria-labelledby="quiz-progress" max="${total}" value="${index}"></progress>
     <h1>${question.heading}</h1>
     <form class="quiz-form">
       ${question.picture ? `<img class="quiz-photo" src="${question.picture}" alt="${escapeHtml(question.prompt)}">` :
-        question.order ? '' : `<p class="quiz-prompt">${question.english ? escapeHtml(question.prompt) : german(question.prompt)}</p>`}
-      ${question.audio ? `<div class="row">${listenButton('the German audio', question.audio, 'Listen')}</div>
+        question.prompt && !question.order ? `<p class="quiz-prompt">${question.english ? escapeHtml(question.prompt) : german(question.prompt)}</p>` : ''}
+      ${question.audio ? `<div class="row"><button class="tile" type="button" data-say="${escapeHtml(question.audio)}">Replay audio</button></div>
         <p class="status audio-status" role="status"></p>` : ''}
       ${response}
       ${test ? '' : questionHint('this question', question.order ? question.answer.join(' ') : question.answer, question.hint)}
@@ -548,6 +542,8 @@ function renderQuiz() {
     </form>
   </section>`;
   focusContent();
+  const replay = content.querySelector('.quiz-form [data-say]');
+  if (replay) speak(replay);
 }
 
 function advanceQuiz() {
@@ -580,12 +576,10 @@ function gradeQuiz(form) {
   if (ok) {
     solved.add(`quiz-${currentLesson.prefix}-${question.id}`);
     rememberProgress();
-  } else {
-    quiz.questions.push(question);
   }
   quiz.waiting = true;
   feedback.dataset.result = ok ? 'correct' : 'wrong';
-  feedback.innerHTML = ok ? 'Correct!' : `Answer: ${german(expected[0])}. You’ll try this again at the end.`;
+  feedback.innerHTML = ok ? 'Correct!' : `Correct answer: ${german(expected[0])}`;
   form.querySelectorAll('input, [data-word]').forEach(control => { control.disabled = true; });
   const submit = form.querySelector('[type="submit"]');
   submit.textContent = 'Continue';
@@ -594,16 +588,10 @@ function gradeQuiz(form) {
 
 function finishQuiz() {
   stopAudio();
-  const { test, correct, total, round, rounds } = quiz;
-  const success = !test || correct.length >= Math.ceil(total * .8);
-  const lastRound = test || round + 1 === rounds;
+  const { test, correct, total } = quiz;
+  const success = correct.length >= Math.ceil(total * .8);
   if (success && !passed.has(currentLesson.route)) {
-    if (lastRound) {
-      passed.add(currentLesson.route);
-      delete practiceRounds[currentLesson.route];
-    } else {
-      practiceRounds[currentLesson.route] = round + 1;
-    }
+    passed.add(currentLesson.route);
     rememberCourse();
   }
   if (test && success) {
@@ -612,17 +600,16 @@ function finishQuiz() {
   }
   updateProgress();
   const next = nextLesson();
-  const heading = !success ? 'Test not passed' : lastRound ? 'Lesson complete' : 'Round complete';
-  const action = !success ? '<button class="primary" type="button" data-course="learn">Review the lesson</button>' :
-    !lastRound ? `<button class="primary" type="button" data-course="practice" data-round="${round + 1}">Next round →</button>` :
+  const heading = success ? 'Lesson complete' : test ? 'Test not passed' : 'Practice complete';
+  const action = !success ? `<button class="primary" type="button" data-course="${test ? 'test' : 'practice'}">Try again</button>` :
     next ? `<a class="primary" href="#${next.route}">Next: ${next.title} →</a>` : '<a class="primary" href="#home">Back to home</a>';
   quiz = null;
   referenceLink.hidden = false;
   content.innerHTML = `<section class="activity quiz-card">
     <h1>${heading}</h1>
-    <p>${correct.length} of ${total} correct.${!success ? ' Score at least 80% to test out. You can review or try again.' : ''}</p>
+    <p>${correct.length} of ${total} correct.${!success ? (test ? ' Score at least 80% to test out.' : ' Score at least 80% to unlock the next lesson.') : ''}</p>
     <div class="row lesson-actions">${action}
-      ${success ? '<button class="secondary" type="button" data-course="learn">Back to lesson</button>' : ''}</div>
+      <button class="secondary" type="button" data-course="learn">${success ? 'Back to lesson' : 'Review the lesson'}</button></div>
   </section>`;
   focusContent();
 }
@@ -679,8 +666,12 @@ function speak(button) {
   const request = ++playback;
   status.textContent = '';
   player.src = audioFile(button.dataset.say);
-  player.play().catch(() => {
-    if (request === playback && status.isConnected) status.textContent = 'The audio could not play. Select Listen to try again.';
+  player.play().catch(error => {
+    if (request === playback && status.isConnected) {
+      const action = button.textContent.trim();
+      status.textContent = error.name === 'NotAllowedError' ?
+        `Select “${action}” to play the audio.` : `The audio could not play. Select “${action}” to try again.`;
+    }
   });
 }
 
@@ -724,7 +715,7 @@ content.addEventListener('click', event => {
   if (!button) return;
   const courseAction = button.dataset.course;
   if (courseAction === 'practice' || courseAction === 'test') {
-    startQuiz(courseAction === 'test', Number(button.dataset.round) || 0);
+    startQuiz(courseAction === 'test');
   } else if (courseAction === 'learn') {
     stopAudio();
     showLesson();
