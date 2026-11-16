@@ -1,19 +1,18 @@
 const content = document.querySelector('#content');
 const reference = document.querySelector('#reference');
 const referenceLink = document.querySelector('#reference-link');
-const moduleChoices = [0, 0];
-let chapterIndex = 0;
 let currentPage = '';
+let currentLesson = null;
+let quiz = null;
 let drill = [];
 
 const progressKey = 'netzwerk-a1-progress';
-const solved = new Set();
-try {
-  const saved = JSON.parse(localStorage.getItem(progressKey));
-  if (Array.isArray(saved)) saved.forEach(key => solved.add(key));
-} catch {
-  // The exercises still work if browser storage is unavailable.
+const courseKey = 'netzwerk-a1-course';
+function readProgress(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
+const oldAnswers = readProgress(progressKey);
+const solved = new Set(Array.isArray(oldAnswers) ? oldAnswers : []);
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
@@ -47,38 +46,37 @@ function sectionKeys(section, prefix) {
   return (section.questions || []).map((_, index) => questionKey(prefix, index));
 }
 
-function topicKeys(topics, prefix) {
-  return topics.map((topic, index) =>
-    topic.sections.flatMap((section, part) => sectionKeys(section, `${prefix}-${index}-${part}`)));
+const savedCourse = readProgress(courseKey);
+const migrated = coursePath.filter(lesson => {
+  // Older Basics lessons were much shorter. Keep their XP and start the new Basics path fresh.
+  if (!lesson.group.number) return false;
+  const keys = lesson.sections.flatMap((section, index) => sectionKeys(section, `${lesson.prefix}-${index}`));
+  return keys.length && keys.every(key => solved.has(key));
+});
+const passed = new Set(Array.isArray(savedCourse?.passed) ? savedCourse.passed : migrated.map(lesson => lesson.route));
+const practiceRounds = savedCourse?.rounds || {};
+
+function rememberCourse() {
+  try { localStorage.setItem(courseKey, JSON.stringify({ passed: [...passed], rounds: practiceRounds })); } catch {}
+}
+if (!savedCourse) rememberCourse();
+
+function nextLesson() {
+  return coursePath.find(lesson => !passed.has(lesson.route));
 }
 
-const chapterKeys = chapters.map((chapter, index) => topicKeys(chapter.modules, `c${index}`));
-const basicsKeys = topicKeys(basics, 'b');
-
-function complete(keys) {
-  return keys.every(key => solved.has(key));
-}
-
-function firstUnfinishedLesson() {
-  const next = basicsKeys.findIndex(keys => !complete(keys));
-  return next === -1 ? 0 : next;
+function unlocked(lesson) {
+  return passed.has(lesson.route) || lesson === nextLesson();
 }
 
 function updateProgress() {
-  const inBasics = currentPage.startsWith('basics/');
-  const topics = inBasics ? basicsKeys : chapterKeys[chapterIndex];
-  const answers = topics.flat();
-  const completedLessons = topics.filter(complete).length;
-  const percent = inBasics ? Math.round(100 * completedLessons / topics.length) :
-    Math.round(100 * answers.filter(key => solved.has(key)).length / answers.length);
+  const group = (currentLesson || nextLesson() || coursePath.at(-1)).group;
+  const count = group.lessons.filter(lesson => passed.has(lesson.route)).length;
+  const percent = Math.round(100 * count / group.lessons.length);
   document.querySelector('#xp').textContent = `${solved.size * 10} XP`;
-  document.querySelector('#progress-label').textContent = inBasics ?
-    `Basics · ${completedLessons}/${topics.length}` : `Chapter ${chapterIndex + 1} · ${percent}%`;
+  document.querySelector('#progress-label').textContent = group.number ?
+    `Chapter ${group.number} · ${percent}%` : `Basics · ${count}/${group.lessons.length}`;
   document.querySelector('#progress').value = percent;
-  content.querySelectorAll('[data-done]').forEach(label => {
-    label.textContent = complete(topics[Number(label.dataset.done)]) ? '✓' : '';
-    label.setAttribute('aria-label', label.textContent ? 'Complete' : '');
-  });
 }
 
 function rememberProgress() {
@@ -135,13 +133,13 @@ function questionRow(section, [prompt, answer, hint], index, prefix) {
   return `<div class="question">${label}<div>${response}</div></div>`;
 }
 
-function ordering([prompt, words, hint], index, prefix) {
+function ordering([prompt, words, hint], index, prefix, showHint = true) {
   const key = questionKey(prefix, index);
   const shuffled = shuffle(words);
   if (shuffled.join(' ') === words.join(' ')) shuffled.push(shuffled.shift());
   return `<div class="order">
     <p id="prompt-${key}" lang="de">${escapeHtml(prompt)}</p>
-    ${questionHint(`word order question ${index + 1}`, words, hint)}
+    ${showHint ? questionHint(`word order question ${index + 1}`, words, hint) : ''}
     <div class="tiles order-output" role="group" aria-label="Your word order"></div>
     <div class="tiles order-choices" role="group" aria-labelledby="prompt-${key}">
       ${shuffled.map((word, i) => `<button type="button" class="tile" data-word="${i}" lang="de">${escapeHtml(word)}</button>`).join('')}
@@ -249,9 +247,11 @@ function teachingHtml(blocks, audio) {
   </section>`;
 }
 
-function exercise(title, sections, prefix, teaching) {
+function exercise(title, sections, prefix) {
   const hasPracticeAudio = sections.some(section => section.kind === 'dictation');
-  const practice = `<p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
+  return `<section class="activity">
+    <h2>${title}</h2>
+    <p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
     <form class="exercise">
       ${sections.map((section, index) => ['registration', 'audio'].includes(section.kind) ? '' :
         sectionHtml(section, `${prefix}-${index}`)).join('')}
@@ -260,26 +260,19 @@ function exercise(title, sections, prefix, teaching) {
       <p class="status score-status" role="status"></p>
     </form>
     ${sections.map((section, index) => section.kind === 'registration' ?
-      registration(section.title, `${prefix}-${index}`) : '').join('')}`;
-  return `<section class="activity">
-    <h2>${title}</h2>
-    ${teaching ? `${teachingHtml(teaching, sections.filter(section => section.kind === 'audio'))}
-      <details class="practice">
-        <summary><span class="practice-start">Start practice</span><span class="practice-hide">Hide practice</span></summary>
-        ${practice}
-      </details>` : practice}
+      registration(section.title, `${prefix}-${index}`) : '').join('')}
   </section>`;
 }
 
 function homePage() {
-  const startedBasics = basicsKeys.flat().some(key => solved.has(key));
-  const basicsAction = basicsKeys.every(complete) ? 'Review the basics' :
-    startedBasics ? 'Continue the basics' : 'Start from zero';
+  const next = nextLesson();
+  const action = !next ? 'Review the course' :
+    passed.size || Object.values(practiceRounds).some(Boolean) ? 'Continue learning' : 'Start from zero';
   return `<section class="hero">
     <div>
       <h1 lang="de">Hallo, <span>Deutsch!</span></h1>
-      <p>New to German? Learn a few letters, numbers, and words first. Then say hello and introduce yourself before moving on to the chapters.</p>
-      <a class="primary hero-start" href="#basics">${basicsAction} →</a>
+      <p>Learn the German alphabet, numbers, and everyday words. Practice each lesson to unlock the next one.</p>
+      <a class="primary hero-start" href="#${next?.route || 'basics/1'}">${action} →</a>
     </div>
     <div class="word-art" aria-hidden="true"><span>Guten Tag!</span><span>Hallo!</span></div>
   </section>
@@ -298,36 +291,38 @@ function homePage() {
   </section>`;
 }
 
-function chapterPage(chapter, topic) {
-  const { title, intro, modules } = chapters[chapter];
-  const module = modules[topic];
-  return `<h1 class="page-title">Chapter ${chapter + 1} · ${german(title)}</h1><p class="intro">${intro}</p>
+function lessonPage(lesson) {
+  const { group, title } = lesson;
+  const next = nextLesson();
+  const finished = passed.has(lesson.route);
+  const open = unlocked(lesson);
+  const view = open ? `${teachingHtml(lesson.teaching, lesson.sections.filter(section => section.kind === 'audio'))}
+    <div class="row lesson-actions">
+      <button type="button" class="primary" data-course="practice">${finished ? 'Review lesson' :
+        practiceRounds[lesson.route] ? 'Continue practice' : 'Start practice'}</button>
+      ${finished && group.number ? '<button type="button" class="secondary" data-course="extra">Extra activities</button>' : ''}
+      ${finished && next ? `<a class="secondary" href="#${next.route}">Continue course →</a>` : ''}
+    </div>` : `<p class="intro">This lesson unlocks after you complete ${escapeHtml(next.title)}.</p>
+      <a class="primary" href="#${next.route}">Go to ${escapeHtml(next.title)} →</a>`;
+  return `<div class="course-shell">
+    <h1 class="page-title">${group.number ? `Chapter ${group.number} · ${german(group.title)}` : group.title}</h1>
+    <p class="intro">${group.intro}</p>
     <div class="workspace">
-      <nav class="topics" aria-label="Topics in Chapter ${chapter + 1}">
-        ${modules.map((module, index) => `<a href="#kapitel-${chapter + 1}/${index + 1}" ${index === topic ? 'aria-current="page"' : ''}>
-          ${chapter + 1}.${index + 1} ${module.title}<span data-done="${index}"></span></a>`).join('')}
+      <nav class="topics" aria-label="Lessons">
+        ${group.lessons.map(item => `<a href="#${item.route}" ${item === lesson ? 'aria-current="page"' : ''}>
+          ${item.index + 1}. ${item.title}
+          ${passed.has(item.route) ? '<span aria-label="Complete">✓</span>' : unlocked(item) ? '' : '<small>Locked</small>'}
+        </a>`).join('')}
       </nav>
-      ${exercise(module.title, module.sections, `c${chapter}-${topic}`, module.teaching)}
-    </div>`;
-}
-
-function basicsPage(step) {
-  const lesson = basics[step];
-  const next = step + 1 < basics.length ?
-    `<a class="primary" href="#basics/${step + 2}">Next: ${basics[step + 1].title} →</a>` :
-    '<a class="primary" href="#kapitel-1">Continue to Chapter 1 →</a>';
-  return `<h1 class="page-title">German from zero</h1>
-    <p class="intro">Lesson ${step + 1} of ${basics.length}. Learn the examples first, then try two quick questions.</p>
-    <div class="workspace">
-      <nav class="topics" aria-label="Basics lessons">
-        ${basics.map(({ title }, index) => `<a href="#basics/${index + 1}" ${index === step ? 'aria-current="page"' : ''}>
-          ${index + 1}. ${title}<span data-done="${index}"></span></a>`).join('')}
-      </nav>
-      <div class="lesson-main">
-        ${exercise(lesson.title, lesson.sections, `b-${step}`, lesson.teaching)}
-        <div class="row lesson-next">${next}</div>
-      </div>
-    </div>`;
+      <section class="activity lesson-main">
+        <div class="lesson-heading">
+          <h2>${title}</h2>
+          ${open && !finished ? '<button type="button" class="secondary" data-course="test">Test out</button>' : ''}
+        </div>
+        ${view}
+      </section>
+    </div>
+  </div>`;
 }
 
 function storyPage() {
@@ -425,42 +420,59 @@ document.querySelector('#reference-content').innerHTML = `<section class="refere
 </section>
 <p class="reference-source">Adapted from ${german('Netzwerk neu A1, Kursbuch')}, pages 17 and 27.</p>`;
 
+const player = new Audio();
+let playback = 0;
+
+function stopAudio() {
+  playback++;
+  player.pause();
+}
+
+function focusContent() {
+  window.scrollTo(0, 0);
+  content.focus({ preventScroll: true });
+}
+
+function showLesson(moveFocus = true) {
+  quiz = null;
+  referenceLink.hidden = false;
+  content.innerHTML = lessonPage(currentLesson);
+  const selected = content.querySelector('.topics [aria-current="page"]');
+  const topics = selected.parentElement;
+  topics.scrollLeft = selected.offsetLeft - (topics.clientWidth - selected.offsetWidth) / 2;
+  if (moveFocus) focusContent();
+}
+
 function showPage(moveFocus = true) {
   const requested = location.hash.slice(1);
   const showReference = requested === 'cheat-sheet';
+  if (showReference && quiz) {
+    history.replaceState(null, '', '#' + currentPage);
+    return;
+  }
   const route = showReference ? (currentPage || 'home') : requested;
-  const chapter = route.match(/^kapitel-([12])(?:\/([1-5]))?$/);
-  const starter = route.match(/^basics(?:\/([1-5]))?$/);
-  const step = starter ? (starter[1] ? Number(starter[1]) - 1 : firstUnfinishedLesson()) : -1;
-  const page = starter ? `basics/${step + 1}` : chapter || ['wg-story', 'daily-drill'].includes(route) ? route : 'home';
+  const group = courseGroups.find(group => group.route === route);
+  const lesson = group ? group.lessons.find(lesson => !passed.has(lesson.route)) || group.lessons[0] :
+    coursePath.find(lesson => lesson.route === route);
+  const page = lesson?.route || (['wg-story', 'daily-drill'].includes(route) ? route : 'home');
   if (page !== currentPage) {
+    stopAudio();
+    referenceLink.hidden = false;
     currentPage = page;
-    if (starter) {
-      content.innerHTML = basicsPage(step);
-    } else if (chapter) {
-      chapterIndex = Number(chapter[1]) - 1;
-      const lastTopic = chapters[chapterIndex].modules.length - 1;
-      const topic = chapter[2] ? Math.min(Number(chapter[2]) - 1, lastTopic) : moduleChoices[chapterIndex];
-      moduleChoices[chapterIndex] = topic;
-      content.innerHTML = chapterPage(chapterIndex, topic);
+    currentLesson = lesson;
+    quiz = null;
+    if (lesson) {
+      showLesson(false);
     } else {
       content.innerHTML = page === 'wg-story' ? storyPage() : page === 'daily-drill' ? drillPage() : homePage();
     }
-    const parentPage = starter ? 'basics' : chapter ? `kapitel-${chapter[1]}` : page;
+    const parentPage = lesson?.group.route || page;
     document.querySelectorAll('.header-inner nav a').forEach(link => {
       if (link.hash === `#${parentPage}`) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
     updateProgress();
-    const selectedTopic = content.querySelector('.topics [aria-current="page"]');
-    if (selectedTopic) {
-      const topics = selectedTopic.parentElement;
-      topics.scrollLeft = selectedTopic.offsetLeft - (topics.clientWidth - selectedTopic.offsetWidth) / 2;
-    }
-    if (moveFocus && !showReference) {
-      window.scrollTo(0, 0);
-      content.focus({ preventScroll: true });
-    }
+    if (moveFocus && !showReference) focusContent();
   }
   if (showReference && !reference.open) reference.showModal();
   else if (!showReference && reference.open) reference.close();
@@ -481,6 +493,138 @@ showPage(false);
 
 function normalize(value) {
   return value.normalize('NFC').trim().toLocaleLowerCase('de').replace(/\s+/g, ' ').replace(/[.!?]$/, '');
+}
+
+function pickOptions(question) {
+  const others = question.choices.filter(option => option !== question.answer);
+  return shuffle([question.answer, ...shuffle(others).slice(0, 3)]);
+}
+
+function startQuiz(test, round = 0) {
+  if (!currentLesson || !unlocked(currentLesson)) return;
+  const bank = lessonQuestions(currentLesson);
+  const rounds = quizRounds(bank);
+  if (!test && !passed.has(currentLesson.route)) round = practiceRounds[currentLesson.route] || 0;
+  round = Math.min(round, rounds.length - 1);
+  const questions = shuffle(test ? testQuestions(bank) : rounds[round]);
+  quiz = { test, round, rounds: rounds.length, questions, total: questions.length, index: 0, correct: [], waiting: false };
+  renderQuiz();
+}
+
+function renderQuiz() {
+  stopAudio();
+  referenceLink.hidden = true;
+  const { questions, index, total, test, round, rounds, correct } = quiz;
+  const question = questions[index];
+  let response;
+  if (question.order) {
+    response = ordering([question.prompt, question.answer, question.hint], 0, 'quiz', false);
+  } else if (question.choices) {
+    response = `<fieldset class="quiz-options"><legend class="visually-hidden">Choose an answer</legend>
+      ${pickOptions(question).map(choice => `<label><input type="radio" name="answer" value="${escapeHtml(choice)}">
+        ${german(choice)}</label>`).join('')}</fieldset>`;
+  } else {
+    response = '<label for="quiz-answer" class="visually-hidden">Your answer</label><input id="quiz-answer" lang="de" type="text" name="answer" autocomplete="off" spellcheck="false">';
+  }
+  const label = test ? `Question ${index + 1} of ${total} · 80% to pass` :
+    `${rounds > 1 ? `Round ${round + 1} of ${rounds} · ` : ''}${correct.length} of ${total} correct${index >= total ? ' · Retry' : ''}`;
+  content.innerHTML = `<section class="activity quiz-card">
+    <div class="lesson-heading">
+      <p>${test ? 'Test out' : 'Practice'} · ${currentLesson.title}</p>
+      <button class="secondary" type="button" data-course="learn">Back to lesson</button>
+    </div>
+    <p id="quiz-progress">${label}</p>
+    <progress aria-labelledby="quiz-progress" max="${total}" value="${test ? index : correct.length}"></progress>
+    <h1>${question.heading}</h1>
+    <form class="quiz-form">
+      ${question.picture ? `<img class="quiz-photo" src="${question.picture}" alt="${escapeHtml(question.prompt)}">` :
+        question.order ? '' : `<p class="quiz-prompt">${question.english ? escapeHtml(question.prompt) : german(question.prompt)}</p>`}
+      ${question.audio ? `<div class="row">${listenButton('the German audio', question.audio, 'Listen')}</div>
+        <p class="status audio-status" role="status"></p>` : ''}
+      ${response}
+      ${test ? '' : questionHint('this question', question.order ? question.answer.join(' ') : question.answer, question.hint)}
+      <p class="status quiz-feedback" role="status"></p>
+      <button class="primary" type="submit">${test ? 'Submit answer' : 'Check answer'}</button>
+    </form>
+  </section>`;
+  focusContent();
+}
+
+function advanceQuiz() {
+  quiz.index++;
+  quiz.waiting = false;
+  if (quiz.index < quiz.questions.length) renderQuiz();
+  else finishQuiz();
+}
+
+function gradeQuiz(form) {
+  if (quiz.waiting) {
+    advanceQuiz();
+    return;
+  }
+  const question = quiz.questions[quiz.index];
+  const submitted = question.order ? form.querySelector('[data-answer]').value : new FormData(form).get('answer');
+  const answer = submitted?.trim();
+  const feedback = form.querySelector('.quiz-feedback');
+  if (!answer) {
+    feedback.textContent = 'Give an answer to continue.';
+    return;
+  }
+  const expected = question.order ? [question.answer.join(' ')] : [question.answer].flat();
+  const ok = expected.some(word => normalize(word) === normalize(answer));
+  if (ok) quiz.correct.push(question.id);
+  if (quiz.test) {
+    advanceQuiz();
+    return;
+  }
+  if (ok) {
+    solved.add(`quiz-${currentLesson.prefix}-${question.id}`);
+    rememberProgress();
+  } else {
+    quiz.questions.push(question);
+  }
+  quiz.waiting = true;
+  feedback.dataset.result = ok ? 'correct' : 'wrong';
+  feedback.innerHTML = ok ? 'Correct!' : `Answer: ${german(expected[0])}. You’ll try this again at the end.`;
+  form.querySelectorAll('input, [data-word]').forEach(control => { control.disabled = true; });
+  const submit = form.querySelector('[type="submit"]');
+  submit.textContent = 'Continue';
+  submit.focus();
+}
+
+function finishQuiz() {
+  stopAudio();
+  const { test, correct, total, round, rounds } = quiz;
+  const success = !test || correct.length >= Math.ceil(total * .8);
+  const lastRound = test || round + 1 === rounds;
+  if (success && !passed.has(currentLesson.route)) {
+    if (lastRound) {
+      passed.add(currentLesson.route);
+      delete practiceRounds[currentLesson.route];
+    } else {
+      practiceRounds[currentLesson.route] = round + 1;
+    }
+    rememberCourse();
+  }
+  if (test && success) {
+    correct.forEach(id => solved.add(`quiz-${currentLesson.prefix}-${id}`));
+    rememberProgress();
+  }
+  updateProgress();
+  const next = nextLesson();
+  const heading = !success ? 'Test not passed' : lastRound ? 'Lesson complete' : 'Round complete';
+  const action = !success ? '<button class="primary" type="button" data-course="learn">Review the lesson</button>' :
+    !lastRound ? `<button class="primary" type="button" data-course="practice" data-round="${round + 1}">Next round →</button>` :
+    next ? `<a class="primary" href="#${next.route}">Next: ${next.title} →</a>` : '<a class="primary" href="#home">Back to home</a>';
+  quiz = null;
+  referenceLink.hidden = false;
+  content.innerHTML = `<section class="activity quiz-card">
+    <h1>${heading}</h1>
+    <p>${correct.length} of ${total} correct.${!success ? ' Score at least 80% to test out. You can review or try again.' : ''}</p>
+    <div class="row lesson-actions">${action}
+      ${success ? '<button class="secondary" type="button" data-course="learn">Back to lesson</button>' : ''}</div>
+  </section>`;
+  focusContent();
 }
 
 function checkAnswers(form) {
@@ -511,7 +655,9 @@ function checkAnswers(form) {
 content.addEventListener('submit', event => {
   event.preventDefault();
   const form = event.target;
-  if (form.matches('.exercise')) {
+  if (form.matches('.quiz-form')) {
+    gradeQuiz(form);
+  } else if (form.matches('.exercise')) {
     checkAnswers(form);
   } else if (form.matches('.registration')) {
     const invalid = [...form.querySelectorAll('input[type="text"]')].find(input => !input.value.trim());
@@ -530,28 +676,12 @@ content.addEventListener('submit', event => {
 
 function speak(button) {
   const status = button.closest('form, .lesson').querySelector('.audio-status');
-  const hint = 'To play the audio, enable a German voice in your browser or device settings.';
-  if (!('speechSynthesis' in window)) {
-    status.textContent = hint;
-    return;
-  }
+  const request = ++playback;
   status.textContent = '';
-  const speech = new SpeechSynthesisUtterance(button.dataset.say);
-  const voices = speechSynthesis.getVoices();
-  const germanVoice = voices.find(voice => voice.lang === 'de-DE') ||
-    voices.find(voice => /^de\b/i.test(voice.lang));
-  if (voices.length && !germanVoice) {
-    status.textContent = hint;
-    return;
-  }
-  speech.lang = 'de-DE';
-  if (germanVoice) speech.voice = germanVoice;
-  speech.rate = .78;
-  speech.onerror = event => {
-    if (!['canceled', 'interrupted'].includes(event.error) && status.isConnected) status.textContent = hint;
-  };
-  speechSynthesis.cancel();
-  speechSynthesis.speak(speech);
+  player.src = audioFile(button.dataset.say);
+  player.play().catch(() => {
+    if (request === playback && status.isConnected) status.textContent = 'The audio could not play. Select Listen to try again.';
+  });
 }
 
 function moveWord(button) {
@@ -592,7 +722,20 @@ function putInBucket(noun, bucket, moveFocus = false) {
 content.addEventListener('click', event => {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.matches('[data-drill]')) {
+  const courseAction = button.dataset.course;
+  if (courseAction === 'practice' || courseAction === 'test') {
+    startQuiz(courseAction === 'test', Number(button.dataset.round) || 0);
+  } else if (courseAction === 'learn') {
+    stopAudio();
+    showLesson();
+  } else if (courseAction === 'extra' && passed.has(currentLesson?.route)) {
+    stopAudio();
+    const { title, sections, prefix } = currentLesson;
+    content.innerHTML = `<div class="quiz-card"><div class="row">
+      <button class="secondary" type="button" data-course="learn">Back to lesson</button>
+    </div>${exercise(title, sections, prefix)}</div>`;
+    focusContent();
+  } else if (button.matches('[data-drill]')) {
     newDrill();
     if (currentPage === 'daily-drill') {
       content.innerHTML = drillPage();

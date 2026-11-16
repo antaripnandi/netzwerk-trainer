@@ -105,13 +105,21 @@ main:focus { outline: none; }
 .lesson-audio { margin-top: 1rem; }
 .lesson-audio summary { cursor: pointer; padding-block: .35rem; font-weight: 650; }
 .lesson-audio .tiles { margin-top: .5rem; }
-.practice { margin-top: 1.6rem; }
-.practice > summary { width: fit-content; color: var(--white); background: var(--green); border-radius: .4rem; padding: .7rem 1rem; font-weight: 700; cursor: pointer; }
-.practice > summary:hover { background: #43553a; }
-.practice[open] > summary { margin-bottom: 1rem; }
-.practice-hide, .practice[open] .practice-start { display: none; }
-.practice[open] .practice-hide { display: inline; }
-.lesson-next { justify-content: flex-end; margin-top: 1rem; }
+.course-shell { max-width: 60rem; margin: auto; }
+.lesson-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-bottom: 1rem; }
+.lesson-heading p, .topics small { color: var(--muted); }
+.lesson-actions { margin: 1.5rem 0 0; }
+.quiz-card { max-width: 37rem; margin: 0 auto; }
+.quiz-card h1 { margin: 1.5rem 0 .75rem; font-size: clamp(1.6rem, 5vw, 2.2rem); text-wrap: pretty; }
+.quiz-card progress { height: .45rem; }
+.quiz-prompt { margin-bottom: 1rem; font-size: 1.15rem; }
+.quiz-photo { display: block; width: min(100%, 17rem); border-radius: .4rem; margin-bottom: 1rem; }
+.quiz-options { display: grid; gap: .5rem; margin: .7rem 0; }
+.quiz-options label { display: flex; align-items: center; gap: .7rem; min-height: 2.75rem; padding: .55rem .75rem; background: var(--light); border-radius: .4rem; cursor: pointer; }
+.quiz-options label:has(:checked) { background: var(--lime); }
+.quiz-options input[type="radio"] { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; flex: none; }
+.quiz-form > .primary { margin-top: .75rem; }
+.quiz-feedback { margin-bottom: .5rem; }
 fieldset { border: 0; padding: 0; margin: 1.6rem 0; min-width: 0; }
 legend { padding: 0; margin-bottom: .65rem; font-weight: 750; font-size: 1.13rem; }
 .questions, .prompts { display: grid; gap: .65rem; }

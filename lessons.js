@@ -2,7 +2,41 @@
 // An array in the answer slot holds alternatives, or the tiles for an ordering exercise.
 const numbersTo20 = 'null eins zwei drei vier fünf sechs sieben acht neun zehn elf zwölf dreizehn vierzehn fünfzehn sechzehn siebzehn achtzehn neunzehn zwanzig'.split(' ');
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const letterNames = 'a be tse de e eff ge ha i jot ka ell emm enn o pe ku err ess te u fau we iks ypsilon tset'.split(' ');
+const letterAudio = letter => 'letter-' + letter.toLowerCase();
+const alphabetGuide = [
+  ['A', '/aː/ · “ah,” as in father'],
+  ['B', '/beː/ · “beh,” with one steady vowel'],
+  ['C', '/tseː/ · “tseh,” with the ts in cats'],
+  ['D', '/deː/ · “deh,” with the same vowel as B'],
+  ['E', '/eː/ · “eh,” held steady'],
+  ['F', '/ɛf/ · “eff,” much like English F'],
+  ['G', '/ɡeː/ · “geh,” with the hard g in go'],
+  ['H', '/haː/ · “hah,” with a clear h'],
+  ['I', '/iː/ · “ee,” as in see'],
+  ['J', '/jɔt/ · “yot,” starting with the y in yes'],
+  ['K', '/kaː/ · “kah”'],
+  ['L', '/ɛl/ · “ell”'],
+  ['M', '/ɛm/ · “em”'],
+  ['N', '/ɛn/ · “en”'],
+  ['O', '/oː/ · “oh,” held steady'],
+  ['P', '/peː/ · “peh,” with the same vowel as B'],
+  ['Q', '/kuː/ · “koo,” as in cool without the l'],
+  ['R', '/ɛʁ/ · “err,” with a German r'],
+  ['S', '/ɛs/ · “ess”'],
+  ['T', '/teː/ · “teh,” with the same vowel as B'],
+  ['U', '/uː/ · “oo,” as in food'],
+  ['V', '/faʊ̯/ · “fow,” rhyming with cow'],
+  ['W', '/veː/ · “veh,” starting with English v'],
+  ['X', '/ɪks/ · “icks”'],
+  ['Y', '/ˈʏpsilɔn/ · “Ypsilon,” starting with rounded lips'],
+  ['Z', '/tsɛt/ · “tsett,” with the ts in cats'],
+];
+
+function audioFile(spoken) {
+  const name = spoken.toLowerCase().replaceAll('ß', 'ss').normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return 'audio/' + name + '.mp3';
+}
 const weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const hobbies = ['fotografieren', 'singen', 'kochen', 'schwimmen', 'reisen', 'tanzen', 'joggen', 'lesen'];
 const preferenceRatings = [
@@ -23,25 +57,14 @@ const conjugation = {
 
 const basics = [
   {
-    title: 'First letters',
+    title: 'The alphabet A–Z',
     teaching: [{
-      title: 'A, B, C, D',
-      text: 'German uses the same A–Z alphabet as English, but some letters have different names. Listen and repeat the first four.',
+      title: 'How to say every letter',
+      text: 'Listen to each letter and repeat its German name. The pronunciation notes describe the letter names, which can differ from the sounds letters make inside words.',
       translationHeading: 'Sounds like',
-      examples: [
-        ['A', 'ah, like the a in “father”', 'a'],
-        ['B', 'beh, with a steady “eh” sound', 'be'],
-        ['C', 'tseh, starting with “ts”', 'tse'],
-        ['D', 'deh, with the same vowel as B', 'de'],
-      ],
+      examples: alphabetGuide.map(([letter, sound]) => [letter, sound, letterAudio(letter)]),
     }],
-    sections: [
-      { title: 'Listen to letters E–Z', kind: 'audio', items: alphabet.slice(4).map((letter, index) => [letter, letterNames[index + 4]]) },
-      { title: 'Match the sound to the letter.', promptLanguage: 'en', choices: alphabet.slice(0, 4), questions: [
-        ['Which letter sounds like “ah”?', 'A', 'It is the first letter of the alphabet.'],
-        ['Which letter sounds like “tseh”?', 'C', 'The third letter has a “ts” sound in its German name.'],
-      ] },
-    ],
+    sections: [],
   },
   {
     title: 'Numbers 0–10',
@@ -159,25 +182,29 @@ const chapters = [
         teaching: [
           {
             title: 'Listen for these letter names',
+            assess: true,
             text: 'When you spell a name or an email address, use the German letter names. V, W, and Z can be easy to mix up.',
             translationHeading: 'Sounds like',
-            examples: [['V', 'fow, rhyming with “cow”', 'fau'], ['W', 'veh', 'we'], ['Z', 'tset', 'tset']],
+            examples: alphabetGuide.filter(([letter]) => 'VWZ'.includes(letter))
+              .map(([letter, sound]) => [letter, sound, letterAudio(letter)]),
           },
           {
             title: 'Count past ten',
+            assess: true,
             text: 'Eleven and twelve have their own names. From thirteen to nineteen, listen for the ending -zehn.',
             translationHeading: 'Number',
             examples: numbersTo20.slice(11).map((word, index) => [word, String(index + 11)]),
           },
           {
             title: 'Spell an email address',
+            assess: true,
             text: 'Say each letter separately. For mia.n@example.de, say “M I A, Punkt, N, ät, E X A M P L E, Punkt, D E.” Listen for these symbols:',
             translationHeading: 'Symbol',
             examples: [['Unterstrich', '_ (underscore)'], ['ät', '@ (at sign)'], ['minus', '- (hyphen)'], ['Punkt', '. (dot)']],
           },
         ],
         sections: [
-          { title: 'Listen to the alphabet', hint: 'Choose a letter to hear its name in German.', kind: 'audio', items: alphabet.map((letter, index) => [letter, letterNames[index]]) },
+          { title: 'Listen to the alphabet', hint: 'Choose a letter to hear its name in German.', kind: 'audio', items: alphabet.map(letter => [letter, letterAudio(letter)]) },
           { title: 'Listen to numbers from 0 to 20', kind: 'audio', items: numbersTo20.map((word, number) => [number, word]) },
           { title: 'Email dictation', kind: 'dictation', hint: 'Listen, then type the email address. You can use symbols or write out their German names: _ = Unterstrich, @ = ät, - = minus, . = Punkt.', questions: [
             ['l e a, Unterstrich, k, ät, m a i l, Punkt, d e', ['lea_k@mail.de', 'lea unterstrich k ät mail punkt de'], 'The first part uses an underscore. The address ends in .de.'],
@@ -285,6 +312,7 @@ const chapters = [
           },
           {
             title: 'Say what you like doing',
+            assess: true,
             text: 'Put gern after the verb to say you like doing something. Use sehr gern for “really like” and nicht so gern for “don’t really like.”',
             examples: [
               ['Ich koche gern.', 'I like cooking.'],
@@ -396,6 +424,7 @@ const chapters = [
           },
           {
             title: 'Read the form labels',
+            assess: true,
             text: 'A club form asks for your name, date of birth, address, and your preferred class and day. Use made-up details in the practice form.',
             examples: [
               ['Vorname', 'first name'], ['Familienname', 'last name'], ['Geburtsdatum', 'date of birth'],
