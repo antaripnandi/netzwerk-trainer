@@ -95,13 +95,19 @@ legend { padding: 0; margin-bottom: .65rem; font-weight: 750; font-size: 1.13rem
 .questions, .prompts { display: grid; gap: .65rem; }
 .question { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 1fr); align-items: center; gap: .35rem 1rem; }
 .question label { line-height: 1.35; }
-.question .feedback { grid-column: 2; }
+.exercise .question { align-items: start; }
+.questions:not(.hobby-grid) > .question > label { padding-top: .65rem; }
+.question-hint { margin-top: .15rem; color: var(--muted); font-size: .88rem; }
+.question-hint summary { width: fit-content; min-height: 1.65rem; padding-block: .2rem; cursor: pointer; font-weight: 650; }
+.question-hint summary:hover { text-decoration: underline; }
+.question-hint p { margin: .15rem 0 .4rem; }
 .feedback:empty, .status:empty { display: none; }
 .chat { max-width: 38rem; }
 .chat .question label { justify-self: start; padding: .6rem .7rem; border-radius: .6rem .6rem .6rem 0; background: var(--light); }
 .chat .question label::before { display: block; margin-bottom: .2rem; content: 'Mia'; font-size: .8rem; font-weight: 750; }
 .feedback, .status { min-height: 1.2rem; font-size: .88rem; font-weight: 650; }
 .hint { margin-bottom: .7rem; }
+.lesson-note { max-width: 70ch; padding: .75rem 1rem; margin-bottom: .75rem; border-radius: .4rem; background: var(--light); }
 .feedback[data-result="correct"], .status[data-result="correct"] { color: #365321; }
 .feedback[data-result="wrong"], .status[data-result="wrong"] { color: var(--bad); }
 .status { margin-top: .65rem; }
@@ -112,7 +118,7 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .row { margin: .6rem 0; }
 .order { margin: .75rem 0 1.15rem; }
 .order-output { min-height: 3.6rem; padding: .4rem; margin: .45rem 0; border-radius: .4rem; background: var(--paper); }
-.order-output:empty::before { content: 'Wähle die Reihenfolge.'; padding-left: .35rem; color: var(--muted); }
+.order-output:empty::before { content: 'Choose tiles to build your answer.'; padding-left: .35rem; color: var(--muted); }
 .order-output button { background: var(--lime); }
 .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 .hobby-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
@@ -120,6 +126,7 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .hobby-grid img { display: block; width: 100%; aspect-ratio: 1.45; object-fit: cover; border-radius: .35rem; margin-bottom: .4rem; }
 .hobby-grid select { font-size: .9rem; }
 .buckets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin: .7rem 0; }
+.article-words { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: .65rem; }
 .bucket { min-height: 5rem; text-align: left; display: grid; place-content: center; gap: .2rem; }
 .bucket[data-bucket="der"] { background: #d4e4f1; }
 .bucket[data-bucket="das"] { background: #d9e8ca; }
@@ -130,6 +137,7 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .person { padding: 1rem; background: var(--light); border-radius: .7rem; }
 .person img { display: block; width: 100%; height: auto; aspect-ratio: 1.15; object-fit: cover; object-position: center 32%; border-radius: .35rem; margin-bottom: .6rem; }
 .person h2 { font: 400 2rem 'Instrument Serif', Georgia, serif; margin-bottom: .35rem; }
+.translation { margin-top: .55rem; color: var(--muted); font-size: .9rem; }
 .person:nth-child(2n) { background: var(--peach); }
 
 .keyboard { position: fixed; z-index: 4; bottom: max(.8rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .25rem; padding: .4rem; border-radius: .65rem; background: var(--white); box-shadow: 0 5px 24px #292f2540; }
@@ -140,11 +148,13 @@ dialog { position: fixed; inset: 0 0 0 auto; width: min(100%, 57rem); height: 10
 dialog::backdrop { background: #1f261a90; }
 .drawer-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .drawer-heading h2 { font: 400 clamp(2rem, 6vw, 3rem) 'Instrument Serif', Georgia, serif; }
+.drawer-heading small { display: block; font: 600 .9rem 'Segoe UI', sans-serif; color: var(--muted); }
 .reference-section { margin-top: 1.5rem; }
 .reference-section h3 { margin-bottom: .6rem; }
 .reference-grid { align-items: start; }
 .reference-grid > * { min-width: 0; }
 .table-scroll { overflow-x: auto; margin-top: 1rem; }
+.reference-section .table-scroll :is(th, td) { padding-inline: .35rem; }
 .verb-practice { margin-top: 0; }
 .verb-practice table { min-width: 33rem; }
 .reference-source { margin-top: 1.5rem; color: var(--muted); }
@@ -172,18 +182,18 @@ tbody th { font-weight: 650; }
 }
 @media (max-width: 455px) {
   .chapters, .question { grid-template-columns: 1fr; }
-  .question .feedback { grid-column: 1; }
   .daily { align-items: flex-start; flex-direction: column; }
   .score { gap: .45rem; padding-inline: .45rem; }
   .logo { gap: .45rem; }
   .keyboard span { display: none; }
 }
 @media (max-width: 520px) {
-  .wg-label { display: none; }
-  .header-inner nav { justify-content: space-between; gap: 0; }
+  .header-inner nav { justify-content: space-between; flex-wrap: wrap; overflow: visible; gap: 0; }
   .header-inner nav a { font-size: .85rem; padding-inline: .38rem; }
 }
 @media (max-width: 360px) {
+  html { scroll-padding-top: 10rem; }
+  .header-inner nav { justify-content: flex-start; }
   .logo-mark { display: none; }
   .keyboard button { width: 2.3rem; }
 }

@@ -23,6 +23,10 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function german(text) {
+  return `<span lang="de">${escapeHtml(text)}</span>`;
+}
+
 function shuffle(items) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index--) {
@@ -53,12 +57,12 @@ function updateProgress() {
   const keys = chapterKeys[chapterIndex].flat();
   const percent = Math.round(100 * keys.filter(key => solved.has(key)).length / keys.length);
   document.querySelector('#xp').textContent = `${solved.size * 10} XP`;
-  document.querySelector('#progress-label').textContent = `Kapitel ${chapterIndex + 1} · ${percent} %`;
+  document.querySelector('#progress-label').textContent = `Chapter ${chapterIndex + 1} · ${percent}%`;
   document.querySelector('#progress').value = percent;
   content.querySelectorAll('[data-done]').forEach(label => {
     const keys = chapterKeys[chapterIndex][Number(label.dataset.done)];
     label.textContent = keys.every(key => solved.has(key)) ? '✓' : '';
-    label.setAttribute('aria-label', label.textContent ? 'Abgeschlossen' : '');
+    label.setAttribute('aria-label', label.textContent ? 'Complete' : '');
   });
 }
 
@@ -67,9 +71,9 @@ function rememberProgress() {
   try { localStorage.setItem(progressKey, JSON.stringify([...solved])); } catch {}
 }
 
-function options(items, placeholder = 'Bitte wählen') {
+function options(items, placeholder = 'Choose…') {
   return `<option value="">${placeholder}</option>` + items
-    .map(item => `<option>${escapeHtml(item)}</option>`).join('');
+    .map(item => `<option lang="de">${escapeHtml(item)}</option>`).join('');
 }
 
 function choice(id, items, extra = '') {
@@ -84,35 +88,47 @@ function feedback(key) {
   return `<p id="feedback-${key}" class="feedback"></p>`;
 }
 
-function questionRow(section, [prompt, answer], index, prefix) {
+function questionHint(label, answer, hint) {
+  const firstAnswer = Array.isArray(answer) ? answer[0] : answer;
+  const start = firstAnswer.length < 5 ? firstAnswer[0] : firstAnswer.slice(0, 2);
+  return `<details class="question-hint">
+    <summary aria-label="Hint for ${escapeHtml(label)}">Hint</summary>
+    <p>${hint ? escapeHtml(hint) : `The answer starts with ${german(start + '…')}.`}</p>
+  </details>`;
+}
+
+function questionRow(section, [prompt, answer, hint], index, prefix) {
   const key = section.keys?.[index] || questionKey(prefix, index);
   const kind = section.kind;
   const field = answerField(key, answer);
   let label = escapeHtml(prompt);
+  const labelText = kind === 'dictation' ? `email ${index + 1}` : prompt;
   if (kind === 'pictures') {
     label = `<img src="photos/${answer}.webp" alt="${label}" width="250" height="172">`;
   }
   if (kind === 'dictation') {
-    label = `<button class="secondary" type="button" data-say="${label}">Adresse ${index + 1} anhören</button>
-      <label class="visually-hidden" for="${key}">Adresse ${index + 1}</label>`;
+    label = `<button class="secondary" type="button" data-say="${label}">Listen to email ${index + 1}</button>
+      <label class="visually-hidden" for="${key}">Email ${index + 1}</label>`;
   } else {
-    label = `<label for="${key}">${label}</label>`;
+    label = `<label for="${key}"${kind === 'pictures' ? '' : ' lang="de"'}>${label}</label>`;
   }
   const input = section.choices ? choice(key, section.choices, field) :
-    `<input id="${key}" type="text" autocomplete="off" spellcheck="false" ${field}>`;
-  if (kind === 'matching') return [label, input + feedback(key)];
-  return `<div class="question">${label}${input}${feedback(key)}</div>`;
+    `<input id="${key}" type="text" lang="de" autocomplete="off" spellcheck="false" ${field}>`;
+  const response = input + questionHint(labelText, answer, hint) + feedback(key);
+  if (kind === 'matching') return [label, response];
+  return `<div class="question">${label}<div>${response}</div></div>`;
 }
 
-function ordering([prompt, words], index, prefix) {
+function ordering([prompt, words, hint], index, prefix) {
   const key = questionKey(prefix, index);
   const shuffled = shuffle(words);
   if (shuffled.join(' ') === words.join(' ')) shuffled.push(shuffled.shift());
   return `<div class="order">
-    <p id="prompt-${key}">${escapeHtml(prompt)}</p>
-    <div class="tiles order-output" role="group" aria-label="Deine Reihenfolge"></div>
+    <p id="prompt-${key}" lang="de">${escapeHtml(prompt)}</p>
+    ${questionHint(`word order question ${index + 1}`, words, hint)}
+    <div class="tiles order-output" role="group" aria-label="Your word order"></div>
     <div class="tiles order-choices" role="group" aria-labelledby="prompt-${key}">
-      ${shuffled.map((word, i) => `<button type="button" class="tile" data-word="${i}">${escapeHtml(word)}</button>`).join('')}
+      ${shuffled.map((word, i) => `<button type="button" class="tile" data-word="${i}" lang="de">${escapeHtml(word)}</button>`).join('')}
     </div>
     <input type="hidden" ${answerField(key, words.join(' '))}>
     ${feedback(key)}
@@ -120,42 +136,49 @@ function ordering([prompt, words], index, prefix) {
 }
 
 function articles(questions, prefix) {
-  return `<p class="hint">Ziehe ein Wort in das passende Feld oder wähle zuerst das Wort und dann den Artikel.</p>
-    <div class="tiles row">
-      ${questions.map(([noun, article], index) => {
+  return `<div class="article-words">
+      ${questions.map(([noun, article, hint], index) => {
         const key = questionKey(prefix, index);
-        return `<span><button type="button" class="tile noun" draggable="true" data-noun="${key}" data-label="${escapeHtml(noun)}" aria-pressed="false" aria-describedby="feedback-${key}">${escapeHtml(noun)}</button>
+        return `<div><button type="button" class="tile noun" draggable="true" lang="de" data-noun="${key}" data-label="${escapeHtml(noun)}" aria-pressed="false" aria-describedby="feedback-${key}">${escapeHtml(noun)}</button>
           <input id="${key}" type="hidden" ${answerField(key, article)}>
-          ${feedback(key)}</span>`;
+          ${questionHint(noun, article, hint)}${feedback(key)}</div>`;
       }).join('')}
     </div>
     <div class="buckets">
-      ${['der', 'das', 'die'].map(article => `<button class="tile bucket" type="button" data-bucket="${article}"><strong>${article}</strong><small></small></button>`).join('')}
+      ${['der', 'das', 'die'].map(article => `<button class="tile bucket" type="button" lang="de" data-bucket="${article}"><strong>${article}</strong><small></small></button>`).join('')}
     </div>`;
 }
 
 function preference() {
   return `<div class="question">
     <label for="hobby">Hobby</label>${choice('hobby', hobbies)}
-    <label for="preference">Wie gern?</label>
-    <input type="range" id="preference" min="0" max="3" value="2" aria-valuetext="gern">
-  </div>
-  <p class="status"><output id="preference-text" for="hobby preference">gern</output></p>`;
+    <label for="preference">Preference</label>
+    <div>
+      <input type="range" id="preference" min="0" max="3" value="2" aria-valuetext="${preferenceRatings[2]}">
+      <p><output id="preference-text" for="hobby preference">${preferenceRatings[2]}</output></p>
+    </div>
+  </div>`;
 }
 
 function registration(title, prefix) {
-  const fields = [['Vorname', 'text'], ['Familienname', 'text'], ['Geburtsdatum', 'date'], ['Adresse', 'text']];
+  const fields = [
+    ['First name', 'Vorname', 'text'], ['Last name', 'Familienname', 'text'],
+    ['Birth date', 'Geburtsdatum', 'date'], ['Address', 'Adresse', 'text'],
+  ];
   return `<form class="registration" data-registration="${questionKey(prefix, 0)}" autocomplete="off">
     <fieldset>
       <legend>${title}</legend>
-      <p class="hint">Verwende Beispieldaten für die Anmeldung.</p>
+      <p class="hint">Use made-up details. This practice form does not send your information.</p>
+      <p class="hint" lang="de">Verwende Beispieldaten für die Anmeldung.</p>
       <div class="questions">
-        ${fields.map(([label, type], index) => `<div class="question"><label for="register-${index}">${label}</label><input id="register-${index}" type="${type}" required></div>`).join('')}
-        <div class="question"><label for="course">Kurs</label>${choice('course', Object.keys(courses), 'required')}</div>
-        <div class="question"><label for="course-day">Tag</label>${choice('course-day', [], 'required disabled')}</div>
+        ${fields.map(([label, translation, type], index) => `<div class="question">
+          <label for="register-${index}">${label} (${german(translation)})</label>
+          <input id="register-${index}" type="${type}" required></div>`).join('')}
+        <div class="question"><label for="course">Course (${german('Kurs')})</label>${choice('course', Object.keys(courses), 'required')}</div>
+        <div class="question"><label for="course-day">Day (${german('Tag')})</label>${choice('course-day', [], 'required disabled')}</div>
       </div>
     </fieldset>
-    <button class="secondary" type="submit">Anmeldung prüfen</button>
+    <button class="secondary" type="submit">Check practice form</button>
     <p class="status" role="status"></p>
   </form>`;
 }
@@ -164,7 +187,7 @@ function sectionHtml(section, prefix) {
   let body;
   if (section.kind === 'audio') {
     body = `<div class="tiles">${section.items.map(([label, spoken]) =>
-      `<button class="tile" type="button" data-say="${spoken}" aria-label="${label} anhören">${label}</button>`).join('')}</div>`;
+      `<button class="tile" type="button" data-say="${spoken}" aria-label="Listen to ${label}">${label}</button>`).join('')}</div>`;
   } else if (section.kind === 'preference') {
     body = preference();
   } else if (section.kind === 'articles') {
@@ -172,20 +195,22 @@ function sectionHtml(section, prefix) {
   } else if (section.kind === 'order') {
     body = section.questions.map((question, index) => ordering(question, index, prefix)).join('');
   } else if (section.kind === 'verbs') {
-    const rows = section.persons.map(([person, verbIndex], row) => [person, ...section.verbs.map((verb, column) => {
+    const rows = section.persons.map(([person, verbIndex], row) => [german(person), ...section.verbs.map((verb, column) => {
       const key = questionKey(prefix, row * section.verbs.length + column);
-      const field = answerField(key, conjugation[verb][verbIndex]);
-      return `<input type="text" autocomplete="off" spellcheck="false" aria-label="${person} · ${verb}" ${field}>${feedback(key)}`;
+      const answer = conjugation[verb][verbIndex];
+      return `<input type="text" autocomplete="off" spellcheck="false" lang="de" aria-label="${person} · ${verb}" ${answerField(key, answer)}>
+        ${questionHint(`${person} · ${verb}`, answer)}${feedback(key)}`;
     })]);
-    body = `<div class="table-scroll verb-practice" tabindex="0" role="region" aria-label="Verbformen">
-      ${table('', ['Person', ...section.verbs], rows)}</div>`;
+    body = `<div class="table-scroll verb-practice" tabindex="0" role="region" aria-label="Verb forms">
+      ${table('', ['Person', ...section.verbs.map(german)], rows)}</div>`;
   } else {
     const rows = section.questions.map((question, index) => questionRow(section, question, index, prefix));
     const style = { pictures: 'hobby-grid', chat: 'chat' }[section.kind] || '';
-    body = section.kind === 'matching' ? table('', ['Land', 'Sprache'], rows) :
+    body = section.kind === 'matching' ? table('', ['Country', 'Language'], rows) :
       `<div class="questions ${style}">${rows.join('')}</div>`;
   }
   return `<fieldset><legend>${section.title}</legend>
+    ${section.lesson ? `<p class="lesson-note">${escapeHtml(section.lesson)}</p>` : ''}
     ${section.hint ? `<p class="hint">${section.hint}</p>` : ''}
     ${body}</fieldset>`;
 }
@@ -194,11 +219,12 @@ function exercise(title, sections, prefix) {
   const hasAudio = sections.some(section => ['audio', 'dictation'].includes(section.kind));
   return `<section class="activity">
     <h2>${title}</h2>
+    <p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
     <form class="exercise">
       ${sections.map((section, index) => section.kind === 'registration' ? '' :
         sectionHtml(section, `${prefix}-${index}`)).join('')}
       ${hasAudio ? '<p class="status audio-status" role="status"></p>' : ''}
-      <button class="primary" type="submit">Antworten prüfen</button>
+      <button class="primary" type="submit">Check answers</button>
       <p class="status score-status" role="status"></p>
     </form>
     ${sections.map((section, index) => section.kind === 'registration' ?
@@ -209,31 +235,31 @@ function exercise(title, sections, prefix) {
 function homePage() {
   return `<section class="hero">
     <div>
-      <h1>Hallo, <span>Deutsch!</span></h1>
-      <p>Übe Deutsch mit Kapitel 1 und 2 von Netzwerk neu A1.1. Vom ersten „Guten Tag“ bis zur Verabredung mit Freunden.</p>
+      <h1 lang="de">Hallo, <span>Deutsch!</span></h1>
+      <p>Start learning German with Chapters 1 and 2 of Netzwerk neu A1.1. Practice saying hello, introducing yourself, and making plans with friends.</p>
     </div>
     <div class="word-art" aria-hidden="true"><span>Guten Tag!</span><span>Hallo!</span></div>
   </section>
   <section aria-labelledby="chapters-title">
-    <h2 class="section-title" id="chapters-title">Deine Kapitel</h2>
+    <h2 class="section-title" id="chapters-title">Choose a chapter</h2>
     <div class="chapters">
       ${chapters.map(({ title, intro }, index) => `<article class="chapter">
-        <small>Kapitel ${index + 1}</small><h3>${title}</h3><p>${intro}</p>
-        <a class="primary" href="#kapitel-${index + 1}">Start Kapitel ${index + 1} →</a>
+        <small>Chapter ${index + 1}</small><h3 lang="de">${title}</h3><p>${intro}</p>
+        <a class="primary" href="#kapitel-${index + 1}">Start Chapter ${index + 1} →</a>
       </article>`).join('')}
     </div>
   </section>
   <section class="daily">
-    <div><h2>Schnell wiederholen</h2><p>Fünf zufällige Fragen aus beiden Kapiteln.</p></div>
-    <button class="secondary" type="button" data-drill>5-Fragen-Mix starten →</button>
+    <div><h2>Quick review</h2><p>Five random questions from both chapters.</p></div>
+    <button class="secondary" type="button" data-drill>Start 5-question mix →</button>
   </section>`;
 }
 
 function chapterPage(chapter, topic) {
   const { title, intro, modules } = chapters[chapter];
-  return `<h1 class="page-title">Kapitel ${chapter + 1} · ${title}</h1><p class="intro">${intro}</p>
+  return `<h1 class="page-title">Chapter ${chapter + 1} · ${german(title)}</h1><p class="intro">${intro}</p>
     <div class="workspace">
-      <nav class="topics" aria-label="Themen in Kapitel ${chapter + 1}">
+      <nav class="topics" aria-label="Topics in Chapter ${chapter + 1}">
         ${modules.map((module, index) => `<a href="#kapitel-${chapter + 1}/${index + 1}" ${index === topic ? 'aria-current="page"' : ''}>
           ${chapter + 1}.${index + 1} ${module.title}<span data-done="${index}"></span></a>`).join('')}
       </nav>
@@ -242,16 +268,16 @@ function chapterPage(chapter, topic) {
 }
 
 function storyPage() {
-  return `<h1 class="page-title">Die Netzwerk-WG</h1>
-    <p class="intro">Lerne die WG kennen und beantworte Fragen zu den ersten fünf Szenen.
-      <a href="${storySource}" target="_blank" rel="noopener">Szenen nachlesen bei Klett</a>
+  return `<h1 class="page-title" lang="de">Die Netzwerk-WG</h1>
+    <p class="intro">WG stands for ${german('Wohngemeinschaft')}, a shared apartment. Meet the roommates and answer questions about their first five scenes.
+      <a href="${storySource}" target="_blank" rel="noopener">Read the German transcript (PDF)</a>
     </p>
-    <div class="people">${roommates.map(([name, bio]) => `<article class="person">
+    <div class="people">${roommates.map(([name, bio, translation]) => `<article class="person">
       <img src="photos/${name.toLowerCase()}.webp" alt="" width="162" height="184">
-      <h2>${name}</h2><p>${bio}</p>
+      <h2>${name}</h2><p lang="de">${bio}</p><p class="translation">${translation}</p>
     </article>`).join('')}</div>
-    ${exercise('Was weißt du über die WG?', storyQuiz, 'wg')}
-    <p class="reference-source">Fotos aus Netzwerk neu A1, Kursbuch, © Ernst Klett Sprachen.</p>`;
+    ${exercise('Roommate quiz', storyQuiz, 'wg')}
+    <p class="reference-source">Photos from ${german('Netzwerk neu A1, Kursbuch')}, © Ernst Klett Sprachen.</p>`;
 }
 
 function newDrill() {
@@ -260,8 +286,10 @@ function newDrill() {
     chapter.modules.forEach((module, topic) => module.sections.forEach((section, part) => {
       if (section.kind && !['matching', 'chat'].includes(section.kind)) return;
       section.questions.forEach((question, position) => questions.push({
-        title: `Kapitel ${index + 1} · ${section.title}`,
+        title: `Chapter ${index + 1} · ${section.title}`,
         choices: section.choices,
+        hint: section.hint,
+        lesson: section.lesson,
         questions: [question],
         keys: [questionKey(`c${index}-${topic}-${part}`, position)],
       }));
@@ -274,10 +302,10 @@ function newDrill() {
 
 function drillPage() {
   if (!drill.length) newDrill();
-  return `<h1 class="page-title">5-Fragen-Mix</h1>
-    <p class="intro">Ein kurzer Rückblick auf beide Kapitel.</p>
-    ${exercise('Teste dein Wissen', drill, 'drill')}
-    <div class="row"><button class="secondary" type="button" data-drill>Neuer Mix</button><a class="secondary" href="#home">Zurück zur Übersicht</a></div>`;
+  return `<h1 class="page-title">5-question mix</h1>
+    <p class="intro">Review questions from both chapters.</p>
+    ${exercise('Quick review', drill, 'drill')}
+    <div class="row"><button class="secondary" type="button" data-drill>New mix</button><a class="secondary" href="#home">Back to home</a></div>`;
 }
 
 function table(title, headings, rows) {
@@ -289,50 +317,50 @@ function table(title, headings, rows) {
 }
 
 function verbTable(verbs, persons) {
-  return table('Personalpronomen und Verben', ['Person', ...verbs], persons.map(([person, index]) =>
-    [person, ...verbs.map(verb => conjugation[verb][index])]));
+  return table('Pronouns and verb forms', ['Person', ...verbs.map(german)], persons.map(([person, index]) =>
+    [german(person), ...verbs.map(verb => german(conjugation[verb][index]))]));
 }
 
 document.querySelector('#reference-content').innerHTML = `<section class="reference-section">
-  <h3>Kapitel 1 · Guten Tag!</h3>
+  <h3>Chapter 1 · ${german('Guten Tag!')}</h3>
   <div class="reference-grid">
-    ${table('Redemittel', ['Situation', 'Beispiel'], greetingsReference)}
+    ${table('Useful phrases', ['Situation', 'German example'], greetingsReference.map(([topic, example]) => [topic, german(example)]))}
     <div>
-      ${table('Grammatik', ['Regel', 'Beispiel'], [
-        ['W-Frage', 'Fragewort + Verb + Subjekt: Wo wohnst du?'],
-        ['Aussagesatz', 'Subjekt + Verb + Ergänzung: Ich wohne in Zürich.'],
-        ['Personalpronomen', 'Frau Lang → sie. Jan → er. Formelle Anrede → Sie.'],
-        ['Herkunft mit aus', 'aus Spanien · aus der Schweiz · aus der Türkei · aus den USA'],
+      ${table('Grammar', ['Rule', 'How it works'], [
+        ['W-question', `Question word + verb + subject. ${german('Wo wohnst du?')} (Where do you live?)`],
+        ['Statement', `Subject + verb + the rest of the sentence. ${german('Ich wohne in Zürich.')} (I live in Zurich.)`],
+        ['Pronouns', `${german('Frau Lang → sie; Jan → er.')} Use ${german('Sie')} for formal “you.”`],
+        [`Where you’re from with ${german('aus')}`, `${escapeHtml(comingFromRule)}<br>${german('aus Spanien · aus der Schweiz · aus der Türkei · aus den USA')}`],
       ])}
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Verbformen Kapitel 1">
-        ${verbTable(['sein', 'heißen', 'kommen', 'wohnen'], [['ich', 0], ['du', 1], ['er/sie', 2], ['Sie', 5]])}
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Chapter 1 verb forms">
+        ${verbTable(['sein', 'heißen', 'kommen', 'wohnen', 'sprechen'], [['ich', 0], ['du', 1], ['er/sie', 2], ['Sie', 5]])}
       </div>
     </div>
   </div>
 </section>
 <section class="reference-section">
-  <h3>Kapitel 2 · Freunde, Kollegen und ich</h3>
+  <h3>Chapter 2 · ${german('Freunde, Kollegen und ich')}</h3>
   <div class="reference-grid">
     <div>
-      ${table('Redemittel', ['Situation', 'Beispiel'], everydayReference)}
-      ${table('Zahlen ab 20', ['Zahl', 'Wort'], numberReference)}
+      ${table('Useful phrases', ['Situation', 'German example'], everydayReference.map(([topic, example]) => [topic, german(example)]))}
+      ${table('Numbers from 20 onward', ['Number', 'German word'], numberReference.map(([number, word]) => [number, german(word)]))}
     </div>
     <div>
-      ${table('Grammatik', ['Regel', 'Beispiel'], [
-        ['Ja-/Nein-Frage', 'Verb + Subjekt + Ergänzung: Gehen wir ins Kino? → Ja. / Nein.'],
-        ['Bestimmter Artikel', 'der Stift (maskulin), das Buch (neutrum), die Tablette (feminin). Im Plural immer die.'],
-        ['Plural ohne Endung', 'der Kilometer → die Kilometer. Bei manchen Nomen mit Umlaut.'],
-        ['Plural -(e)n', 'die Stunde → die Stunden'],
-        ['Plural -e (ggf. mit Umlaut)', 'der Tag → die Tage · der Arzt → die Ärzte'],
-        ['Plural -er (ggf. mit Umlaut)', 'das Buch → die Bücher'],
-        ['Plural -s', 'das Auto → die Autos'],
+      ${table('Grammar', ['Rule', 'How it works'], [
+        ['Yes/no question', `Verb + subject + the rest of the sentence. ${german('Gehen wir ins Kino? → Ja. / Nein.')}`],
+        ['Definite article', `${german('der Stift')} (masculine), ${german('das Buch')} (neuter), ${german('die Tablette')} (feminine). The plural article is always ${german('die')}.`],
+        ['Plural without an ending', `${german('der Kilometer → die Kilometer')}. Some nouns add an umlaut.`],
+        ['Plural -(e)n', german('die Stunde → die Stunden')],
+        ['Plural -e (sometimes with an umlaut)', german('der Tag → die Tage · der Arzt → die Ärzte')],
+        ['Plural -er (sometimes with an umlaut)', german('das Buch → die Bücher')],
+        ['Plural -s', german('das Auto → die Autos')],
       ])}
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Verbformen Kapitel 2">${verbTable(['kochen', 'arbeiten', 'lesen', 'sprechen', 'sein', 'haben'],
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Chapter 2 verb forms">${verbTable(['kochen', 'arbeiten', 'lesen', 'sprechen', 'sein', 'haben'],
         [['ich', 0], ['du', 1], ['er/es/sie', 2], ['wir', 3], ['ihr', 4], ['sie/Sie', 5]])}</div>
     </div>
   </div>
 </section>
-<p class="reference-source">Nach Netzwerk neu A1, Kursbuch, S. 17 und 27.</p>`;
+<p class="reference-source">Adapted from ${german('Netzwerk neu A1, Kursbuch')}, pages 17 and 27.</p>`;
 
 function showPage(moveFocus = true) {
   const requested = location.hash.slice(1);
@@ -387,22 +415,24 @@ function normalize(value) {
 function checkAnswers(form) {
   const inputs = [...form.querySelectorAll('[data-answer]')];
   let correct = 0;
+  let unanswered = 0;
   inputs.forEach(input => {
     const expected = [JSON.parse(input.dataset.answer)].flat();
-    const answer = input.value;
+    const answer = input.value.trim();
     const ok = expected.some(word => normalize(word) === normalize(answer));
     const message = document.getElementById(`feedback-${input.dataset.key}`);
-    message.textContent = ok ? 'Richtig!' : answer ? `Lösung: ${expected[0]}` : 'Deine Antwort fehlt.';
-    message.dataset.result = ok ? 'correct' : 'wrong';
+    message.innerHTML = ok ? 'Correct!' : answer ? `Answer: ${german(expected[0])}` : 'No answer yet. Try the hint.';
+    message.dataset.result = ok ? 'correct' : answer ? 'wrong' : '';
     const control = input.type === 'hidden' ? input.parentElement.querySelector('.noun, .order-output') : input;
-    control?.setAttribute('aria-invalid', String(!ok));
+    control?.setAttribute('aria-invalid', String(Boolean(answer) && !ok));
     if (ok) {
       solved.add(input.dataset.key);
       correct++;
     }
+    if (!answer) unanswered++;
   });
   const status = form.querySelector('.score-status');
-  status.textContent = `${correct} von ${inputs.length} richtig.${correct === inputs.length ? ' Gut gemacht!' : ''}`;
+  status.textContent = `${correct} of ${inputs.length} correct.${correct === inputs.length ? ' Well done!' : ''}${unanswered ? ` ${unanswered} unanswered.` : ''}`;
   status.dataset.result = correct === inputs.length ? 'correct' : '';
   rememberProgress();
 }
@@ -415,13 +445,13 @@ content.addEventListener('submit', event => {
   } else if (form.matches('.registration')) {
     const invalid = [...form.querySelectorAll('input[type="text"]')].find(input => !input.value.trim());
     if (invalid) {
-      invalid.setCustomValidity('Bitte fülle dieses Feld aus.');
+      invalid.setCustomValidity('Please fill in this field.');
       invalid.reportValidity();
       return;
     }
     solved.add(form.dataset.registration);
     const status = form.querySelector('.status');
-    status.textContent = `Alles ausgefüllt! ${form.querySelector('#course').value} am ${form.querySelector('#course-day').value}.`;
+    status.innerHTML = `Practice form complete! ${german(form.querySelector('#course').value)} on ${german(form.querySelector('#course-day').value)}.`;
     status.dataset.result = 'correct';
     rememberProgress();
   }
@@ -429,7 +459,7 @@ content.addEventListener('submit', event => {
 
 function speak(button) {
   const status = button.closest('form').querySelector('.audio-status');
-  const hint = 'Aktiviere eine deutsche Stimme in deinem Browser oder Betriebssystem.';
+  const hint = 'To play the audio, enable a German voice in your browser or device settings.';
   if (!('speechSynthesis' in window)) {
     status.textContent = hint;
     return;
@@ -533,7 +563,7 @@ content.addEventListener('input', event => {
   const input = event.target;
   if (input.id === 'hobby' || input.id === 'preference') {
     const slider = document.querySelector('#preference');
-    const rating = ['nicht so gern', 'es geht so', 'gern', 'sehr gern'][slider.value];
+    const rating = preferenceRatings[slider.value];
     const hobby = document.querySelector('#hobby').value;
     slider.setAttribute('aria-valuetext', rating);
     document.querySelector('#preference-text').value = hobby ? `${hobby} · ${rating}` : rating;

@@ -1,33 +1,33 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Interaktive Deutschübungen für Kapitel 1 und 2 von Netzwerk neu A1.1.">
+  <meta name="description" content="Beginner German exercises for Netzwerk neu A1.1, Chapters 1 and 2.">
   <title>Netzwerk neu A1.1 – Trainer</title>
   <link rel="stylesheet" href="style.css">
   <script src="lessons.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
-  <a class="skip" href="#content">Zum Inhalt</a>
+  <a class="skip" href="#content">Skip to content</a>
   <header class="site-header">
     <div class="header-inner">
       <a class="logo" href="#home">
         <span class="logo-mark" aria-hidden="true">N<span>.</span></span>
         <span>Netzwerk neu <small>A1.1 – Trainer</small></span>
       </a>
-      <nav aria-label="Hauptmenü">
+      <nav aria-label="Main menu">
         <a href="#home">Home</a>
-        <a href="#kapitel-1">Kapitel 1<span class="nav-topic"> · Guten Tag!</span></a>
-        <a href="#kapitel-2">Kapitel 2<span class="nav-topic"> · Freunde &amp; Kollegen</span></a>
-        <a href="#wg-story" aria-label="Die Netzwerk-WG"><span class="wg-label">Die Netzwerk-</span>WG</a>
-        <a href="#cheat-sheet" id="reference-link">Kurz &amp; Klar</a>
+        <a href="#kapitel-1">Chapter 1<span class="nav-topic"> · Greetings</span></a>
+        <a href="#kapitel-2">Chapter 2<span class="nav-topic"> · Friends &amp; Colleagues</span></a>
+        <a href="#wg-story">Roommates</a>
+        <a href="#cheat-sheet" id="reference-link">Reference</a>
       </nav>
       <div class="score" aria-live="polite">
         <span id="xp">0 XP</span>
         <div>
-          <span id="progress-label">Kapitel 1 · 0 %</span>
+          <span id="progress-label">Chapter 1 · 0%</span>
           <progress id="progress" value="0" max="100" aria-labelledby="progress-label"></progress>
         </div>
       </div>
@@ -36,8 +36,8 @@
 
   <main id="content" tabindex="-1"></main>
 
-  <aside class="keyboard" aria-label="Deutsche Sonderzeichen">
-    <span>Sonderzeichen</span>
+  <aside class="keyboard" aria-label="Special characters">
+    <span>Special characters</span>
     <button type="button">ä</button><button type="button">ö</button><button type="button">ü</button>
     <button type="button">ß</button><button type="button">Ä</button><button type="button">Ö</button>
     <button type="button">Ü</button>
@@ -45,8 +45,8 @@
 
   <dialog id="reference" aria-labelledby="reference-title">
     <div class="drawer-heading">
-      <h2 id="reference-title">Kurz &amp; Klar</h2>
-      <form method="dialog"><button class="secondary">Schließen</button></form>
+      <h2 id="reference-title">Reference <small lang="de">Kurz &amp; Klar</small></h2>
+      <form method="dialog"><button class="secondary">Close</button></form>
     </div>
     <div id="reference-content"></div>
   </dialog>
