@@ -163,7 +163,7 @@ const chapters = [
           },
         ],
         sections: [
-          { title: 'Du or Sie? Sort the greetings.', hint: 'Both mean “you.” Use informal du with friends and family. Use formal Sie in polite situations, such as addressing someone by title and last name.', choices: ['Informell (du)', 'Formell (Sie)'], questions: [
+          { title: 'Is the greeting formal or informal?', hint: 'Both mean “you.” Use informal du with friends and family. Use formal Sie in polite situations, such as addressing someone by title and last name.', choices: ['Informell (du)', 'Formell (Sie)'], questions: [
             ['Hallo, Mia! Wie geht’s dir?', 'Informell (du)', 'Hi, Mia! How are you? Notice the first name and casual greeting.'],
             ['Guten Tag, Herr Berg. Wie geht es Ihnen?', 'Formell (Sie)', 'Good day, Mr. Berg. How are you? Herr means “Mr.”'],
             ['Tschüss, Ben! Bis morgen!', 'Informell (du)', 'Bye, Ben! See you tomorrow! Notice the first name.'],
@@ -249,7 +249,7 @@ const chapters = [
             ['Österreich', 'Deutsch', 'Österreich means Austria.'], ['Spanien', 'Spanisch', 'Spanien means Spain.'], ['Japan', 'Japanisch'],
             ['die Türkei', 'Türkisch', 'Die Türkei means Türkiye.'], ['Brasilien', 'Portugiesisch', 'Brasilien means Brazil. Its official language also comes from a country in Europe.'], ['Polen', 'Polnisch', 'Polen means Poland.'],
           ] },
-          { title: 'Where are you from?', hint: 'Type only the words that go after aus.', lesson: comingFromRule, questions: [
+          { title: 'Type the words that go after aus.', lesson: comingFromRule, questions: [
             ['Ich komme aus … (Spanien).', 'Spanien', 'There is no article before Spanien.'],
             ['Ich komme aus … (die Schweiz).', 'der Schweiz', 'Die Schweiz is feminine singular. Change its article.'],
             ['Ich komme aus … (die Türkei).', 'der Türkei', 'Die Türkei is feminine singular. Change its article.'],
@@ -286,11 +286,11 @@ const chapters = [
             verbs: ['sein', 'heißen', 'kommen', 'wohnen', 'sprechen'],
             persons: [['ich', 0], ['du', 1], ['er/sie', 2], ['Sie', 5]],
           },
-          { title: 'Build sentences with the verb second.', kind: 'order', lesson: 'Start a W-question with its question word or phrase: Woher kommst du? (Where are you from?) Start these statements with the subject: Wir lernen Deutsch. (We’re learning German.)', questions: [
-            ['W-Frage', ['Wo', 'wohnst', 'du?'], 'Ask “Where do you live?” Wo means “where.”'],
-            ['W-Frage', ['Welche Sprachen', 'sprichst', 'du?'], 'Ask “Which languages do you speak?” The question phrase goes first.'],
-            ['Aussagesatz', ['Ich', 'komme', 'aus Spanien.'], 'Say “I come from Spain.” Start with “I.”'],
-            ['Aussagesatz', ['Anna', 'wohnt', 'in Hannover.'], 'Say “Anna lives in Hanover.” Start with the person.'],
+          { title: 'Put the words in order. The verb goes second.', kind: 'order', promptLanguage: 'en', lesson: 'Start a W-question with its question word or phrase: Woher kommst du? (Where are you from?) Start these statements with the subject: Wir lernen Deutsch. (We’re learning German.)', questions: [
+            ['Where do you live?', ['Wo', 'wohnst', 'du?'], 'Wo means “where.”'],
+            ['Which languages do you speak?', ['Welche Sprachen', 'sprichst', 'du?'], 'The question phrase goes first.'],
+            ['I come from Spain.', ['Ich', 'komme', 'aus Spanien.'], 'Start with “I.”'],
+            ['Anna lives in Hanover.', ['Anna', 'wohnt', 'in Hannover.'], 'Start with the person.'],
           ] },
         ],
       },
@@ -353,12 +353,12 @@ const chapters = [
           },
         ],
         sections: [
-          { title: 'Put the seven days of the week in order.', kind: 'order', questions: [['Beginne mit Montag.', weekdays, 'Start with Montag (Monday). Dienstag is Tuesday, and Sonntag is Sunday.']] },
-          { title: 'Make plans with Mia.', kind: 'chat', hint: 'Choose a reply for each message. Open Hint for a translation and what you want to say.', choices: ['Ja, gern!', 'Am Freitag?', 'Nein, das geht leider nicht.', 'Ja, super!'], questions: [
-            ['Gehen wir ins Kino? (Du hast Lust.)', 'Ja, gern!', '“Shall we go to the movies?” Say you’d love to.'],
-            ['Wann gehen wir? (Du schlägst Freitag vor.)', 'Am Freitag?', '“When shall we go?” Suggest Friday.'],
-            ['Geht es um 18 Uhr? (Du hast keine Zeit.)', 'Nein, das geht leider nicht.', '“Does 6 p.m. work?” Say it doesn’t.'],
-            ['Dann um 20 Uhr? (Das passt.)', 'Ja, super!', '“Then at 8 p.m.?” Say that works for you.'],
+          { title: 'Put the seven days of the week in order.', kind: 'order', promptLanguage: 'en', questions: [['Start with Monday.', weekdays, 'Montag is Monday. Dienstag is Tuesday, and Sonntag is Sunday.']] },
+          { title: 'Make plans with Mia.', kind: 'chat', hint: 'Choose a reply for each message. Open Hint for a translation.', choices: ['Ja, gern!', 'Am Freitag?', 'Nein, das geht leider nicht.', 'Ja, super!'], questions: [
+            ['Gehen wir ins Kino?', 'Ja, gern!', '“Shall we go to the movies?”', 'Say you’d love to go.'],
+            ['Wann gehen wir?', 'Am Freitag?', '“When shall we go?”', 'Suggest Friday.'],
+            ['Geht es um 18 Uhr?', 'Nein, das geht leider nicht.', '“Does 6 p.m. work?”', 'Say that 6 p.m. doesn’t work for you.'],
+            ['Dann um 20 Uhr?', 'Ja, super!', '“Then at 8 p.m.?”', 'Say that 8 p.m. works for you.'],
           ] },
         ],
       },
@@ -433,7 +433,7 @@ const chapters = [
           },
         ],
         sections: [
-          { title: 'Write each number in German.', lesson: 'For numbers like 24, put the ones first: vier + und + zwanzig makes vierundzwanzig. Write it as one word.', questions: [
+          { title: 'Write the number as a German word.', lesson: 'For numbers like 24, put the ones first: vier + und + zwanzig makes vierundzwanzig. Write it as one word.', questions: [
             ['22', 'zweiundzwanzig'], ['36', 'sechsunddreißig'], ['71', 'einundsiebzig'],
             ['108', ['einhundertacht', 'hundertacht']], ['480', 'vierhundertachtzig'],
           ] },

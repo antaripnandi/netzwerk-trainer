@@ -30,7 +30,8 @@ function vocabularyQuestions(blocks) {
         };
       }
       return {
-        heading: 'Choose the German translation.',
+        heading: translationHeading === 'Number' ? 'How do you say this number in German?' :
+          translationHeading === 'Symbol' ? 'What is this symbol called in German?' : 'Choose the German translation.',
         prompt: meaning,
         answer: word,
         choices,
@@ -41,19 +42,27 @@ function vocabularyQuestions(blocks) {
 }
 
 function lessonQuestions(lesson) {
+  const directions = {
+    articles: 'Choose the article for this noun.',
+    chat: 'Choose a reply to Mia.',
+    dictation: 'Listen and type the email address.',
+    matching: 'Choose a language spoken in this country.',
+    pictures: 'Choose the German verb that matches the photo.',
+  };
   const activities = lesson.sections.flatMap(section => {
     if (section.kind === 'verbs') {
       return section.persons.flatMap(([person, index]) => section.verbs.map(verb => ({
-        heading: section.title,
-        prompt: person + ' · ' + verb,
+        heading: 'Type the missing form of the verb.',
+        prompt: person + ' … (' + verb + ')',
         answer: conjugation[verb][index],
       })));
     }
-    return (section.questions || []).map(([prompt, answer, hint]) => ({
-      heading: section.title,
-      prompt: section.kind === 'dictation' ? 'Listen, then type the email address.' : prompt,
+    return (section.questions || []).map(([prompt, answer, hint, instruction]) => ({
+      heading: directions[section.kind] || section.title,
+      prompt: section.kind === 'dictation' ? '' : prompt,
       answer,
       hint,
+      instruction,
       choices: section.kind === 'articles' ? ['der', 'das', 'die'] : section.choices,
       audio: section.kind === 'dictation' ? prompt : undefined,
       picture: section.kind === 'pictures' ? 'photos/' + answer + '.webp' : undefined,

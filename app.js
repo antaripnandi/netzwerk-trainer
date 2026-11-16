@@ -109,7 +109,7 @@ function questionHint(label, answer, hint) {
   </details>`;
 }
 
-function questionRow(section, [prompt, answer, hint], index, prefix) {
+function questionRow(section, [prompt, answer, hint, instruction], index, prefix) {
   const key = section.keys?.[index] || questionKey(prefix, index);
   const kind = section.kind;
   const field = answerField(key, answer);
@@ -123,7 +123,8 @@ function questionRow(section, [prompt, answer, hint], index, prefix) {
       <label class="visually-hidden" for="${key}">Email ${index + 1}</label>`;
   } else {
     const language = section.promptLanguage || (kind === 'pictures' ? 'en' : 'de');
-    label = `<label for="${key}" lang="${language}">${label}</label>`;
+    label = `<label for="${key}" lang="${language}">${label}${instruction ?
+      `<span class="question-direction" lang="en">${escapeHtml(instruction)}</span>` : ''}</label>`;
   }
   const input = section.choices ? choice(key, section.choices, field) :
     `<input id="${key}" type="text" lang="de" autocomplete="off" spellcheck="false" ${field}>`;
@@ -132,12 +133,12 @@ function questionRow(section, [prompt, answer, hint], index, prefix) {
   return `<div class="question">${label}<div>${response}</div></div>`;
 }
 
-function ordering([prompt, words, hint], index, prefix, showHint = true) {
+function ordering([prompt, words, hint], index, prefix, showHint = true, language = 'de') {
   const key = questionKey(prefix, index);
   const shuffled = shuffle(words);
   if (shuffled.join(' ') === words.join(' ')) shuffled.push(shuffled.shift());
   return `<div class="order">
-    <p id="prompt-${key}" lang="de">${escapeHtml(prompt)}</p>
+    <p id="prompt-${key}" lang="${language}">${escapeHtml(prompt)}</p>
     ${showHint ? questionHint(`word order question ${index + 1}`, words, hint) : ''}
     <div class="tiles order-output" role="group" aria-label="Your word order"></div>
     <div class="tiles order-choices" role="group" aria-labelledby="prompt-${key}">
@@ -215,7 +216,7 @@ function sectionHtml(section, prefix) {
   } else if (section.kind === 'articles') {
     body = articles(section.questions, prefix);
   } else if (section.kind === 'order') {
-    body = section.questions.map((question, index) => ordering(question, index, prefix)).join('');
+    body = section.questions.map((question, index) => ordering(question, index, prefix, true, section.promptLanguage)).join('');
   } else if (section.kind === 'verbs') {
     const rows = section.persons.map(([person, verbIndex], row) => [german(person), ...section.verbs.map((verb, column) => {
       const key = questionKey(prefix, row * section.verbs.length + column);
@@ -245,7 +246,8 @@ function teachingHtml(blocks, audio) {
       <h3>${title}</h3>
       ${text ? `<p>${escapeHtml(text)}</p>` : ''}
       ${table('', ['German', translationHeading, 'Audio'], examples.map(([word, translation, spoken = word]) =>
-        [german(word), escapeHtml(translation), listenButton(word, spoken, 'Listen')]))}
+        [german(word), translationHeading === 'Number' ? `<span class="lesson-number">${escapeHtml(translation)}</span>` :
+          escapeHtml(translation), listenButton(word, spoken, 'Listen')]))}
     </section>`).join('')}
     ${audio.map(section => `<details class="lesson-audio">
       <summary>${section.title}</summary>
@@ -523,15 +525,16 @@ function renderQuiz() {
   referenceLink.hidden = true;
   const { questions, index, total, test } = quiz;
   const question = questions[index];
+  const isNumber = /^\d+$/.test(question.prompt);
   let response;
   if (question.order) {
-    response = ordering([question.prompt, question.answer, question.hint], 0, 'quiz', false);
+    response = ordering([question.prompt, question.answer, question.hint], 0, 'quiz', false, question.english ? 'en' : 'de');
   } else if (question.choices) {
     response = `<fieldset class="quiz-options"><legend class="visually-hidden">Choose an answer</legend>
       ${pickOptions(question).map(choice => `<label><input type="radio" name="answer" value="${escapeHtml(choice)}">
         ${german(choice)}</label>`).join('')}</fieldset>`;
   } else {
-    response = '<label for="quiz-answer" class="visually-hidden">Your answer</label><input id="quiz-answer" lang="de" type="text" name="answer" autocomplete="off" spellcheck="false">';
+    response = '<label for="quiz-answer" class="visually-hidden">Your answer</label><input id="quiz-answer" lang="de" type="text" name="answer" placeholder="Type your answer" autocomplete="off" spellcheck="false">';
   }
   const label = `Question ${index + 1} of ${total} · 80% to pass`;
   content.innerHTML = `<section class="activity quiz-card">
@@ -544,7 +547,9 @@ function renderQuiz() {
     <h1>${question.heading}</h1>
     <form class="quiz-form">
       ${question.picture ? `<img class="quiz-photo" src="${question.picture}" alt="${escapeHtml(question.prompt)}">` :
-        question.prompt && !question.order ? `<p class="quiz-prompt">${question.english ? escapeHtml(question.prompt) : german(question.prompt)}</p>` : ''}
+        question.prompt && !question.order ? `<p class="quiz-prompt${isNumber ? ' quiz-number' : ''}">${isNumber || question.english ?
+          escapeHtml(question.prompt) : german(question.prompt)}</p>` : ''}
+      ${question.instruction ? `<p class="question-direction">${escapeHtml(question.instruction)}</p>` : ''}
       ${question.audio ? `<div class="row" role="group" aria-label="Play audio">
         <button class="tile" type="button" data-say="${escapeHtml(question.audio)}" data-rate="1">Play normal</button>
         <button class="tile" type="button" data-say="${escapeHtml(question.audio)}" data-rate="${slowRate}">Play slow</button>
