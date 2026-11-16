@@ -1,11 +1,9 @@
 const content = document.querySelector('#content');
 const reference = document.querySelector('#reference');
 const referenceLink = document.querySelector('#reference-link');
-const keyboard = document.querySelector('.keyboard');
 const moduleChoices = [0, 0];
 let chapterIndex = 0;
 let currentPage = '';
-let activeInput;
 let drill = [];
 
 const progressKey = 'netzwerk-a1-progress';
@@ -49,19 +47,36 @@ function sectionKeys(section, prefix) {
   return (section.questions || []).map((_, index) => questionKey(prefix, index));
 }
 
-const chapterKeys = chapters.map((chapter, index) =>
-  chapter.modules.map((module, topic) =>
-    module.sections.flatMap((section, part) => sectionKeys(section, `c${index}-${topic}-${part}`))));
+function topicKeys(topics, prefix) {
+  return topics.map((topic, index) =>
+    topic.sections.flatMap((section, part) => sectionKeys(section, `${prefix}-${index}-${part}`)));
+}
+
+const chapterKeys = chapters.map((chapter, index) => topicKeys(chapter.modules, `c${index}`));
+const basicsKeys = topicKeys(basics, 'b');
+
+function complete(keys) {
+  return keys.every(key => solved.has(key));
+}
+
+function firstUnfinishedLesson() {
+  const next = basicsKeys.findIndex(keys => !complete(keys));
+  return next === -1 ? 0 : next;
+}
 
 function updateProgress() {
-  const keys = chapterKeys[chapterIndex].flat();
-  const percent = Math.round(100 * keys.filter(key => solved.has(key)).length / keys.length);
+  const inBasics = currentPage.startsWith('basics/');
+  const topics = inBasics ? basicsKeys : chapterKeys[chapterIndex];
+  const answers = topics.flat();
+  const completedLessons = topics.filter(complete).length;
+  const percent = inBasics ? Math.round(100 * completedLessons / topics.length) :
+    Math.round(100 * answers.filter(key => solved.has(key)).length / answers.length);
   document.querySelector('#xp').textContent = `${solved.size * 10} XP`;
-  document.querySelector('#progress-label').textContent = `Chapter ${chapterIndex + 1} · ${percent}%`;
+  document.querySelector('#progress-label').textContent = inBasics ?
+    `Basics · ${completedLessons}/${topics.length}` : `Chapter ${chapterIndex + 1} · ${percent}%`;
   document.querySelector('#progress').value = percent;
   content.querySelectorAll('[data-done]').forEach(label => {
-    const keys = chapterKeys[chapterIndex][Number(label.dataset.done)];
-    label.textContent = keys.every(key => solved.has(key)) ? '✓' : '';
+    label.textContent = complete(topics[Number(label.dataset.done)]) ? '✓' : '';
     label.setAttribute('aria-label', label.textContent ? 'Complete' : '');
   });
 }
@@ -110,7 +125,8 @@ function questionRow(section, [prompt, answer, hint], index, prefix) {
     label = `<button class="secondary" type="button" data-say="${label}">Listen to email ${index + 1}</button>
       <label class="visually-hidden" for="${key}">Email ${index + 1}</label>`;
   } else {
-    label = `<label for="${key}"${kind === 'pictures' ? '' : ' lang="de"'}>${label}</label>`;
+    const language = section.promptLanguage || (kind === 'pictures' ? 'en' : 'de');
+    label = `<label for="${key}" lang="${language}">${label}</label>`;
   }
   const input = section.choices ? choice(key, section.choices, field) :
     `<input id="${key}" type="text" lang="de" autocomplete="off" spellcheck="false" ${field}>`;
@@ -183,12 +199,13 @@ function registration(title, prefix) {
   </form>`;
 }
 
+function listenButton(label, spoken, text = label) {
+  return `<button class="tile" type="button" data-say="${escapeHtml(spoken)}" aria-label="Listen to ${escapeHtml(label)}">${escapeHtml(text)}</button>`;
+}
+
 function sectionHtml(section, prefix) {
   let body;
-  if (section.kind === 'audio') {
-    body = `<div class="tiles">${section.items.map(([label, spoken]) =>
-      `<button class="tile" type="button" data-say="${spoken}" aria-label="Listen to ${label}">${label}</button>`).join('')}</div>`;
-  } else if (section.kind === 'preference') {
+  if (section.kind === 'preference') {
     body = preference();
   } else if (section.kind === 'articles') {
     body = articles(section.questions, prefix);
@@ -215,28 +232,54 @@ function sectionHtml(section, prefix) {
     ${body}</fieldset>`;
 }
 
-function exercise(title, sections, prefix) {
-  const hasAudio = sections.some(section => ['audio', 'dictation'].includes(section.kind));
-  return `<section class="activity">
-    <h2>${title}</h2>
-    <p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
+function teachingHtml(blocks, audio) {
+  return `<section class="lesson" aria-label="Learn">
+    <p class="status audio-status" role="status"></p>
+    ${blocks.map(({ title, text, examples, translationHeading = 'English' }) => `<section class="lesson-block">
+      <h3>${title}</h3>
+      ${text ? `<p>${escapeHtml(text)}</p>` : ''}
+      ${table('', ['German', translationHeading, 'Audio'], examples.map(([word, translation, spoken = word]) =>
+        [german(word), escapeHtml(translation), listenButton(word, spoken, 'Listen')]))}
+    </section>`).join('')}
+    ${audio.map(section => `<details class="lesson-audio">
+      <summary>${section.title}</summary>
+      ${section.hint ? `<p class="hint">${escapeHtml(section.hint)}</p>` : ''}
+      <div class="tiles">${section.items.map(([label, spoken]) => listenButton(label, spoken)).join('')}</div>
+    </details>`).join('')}
+  </section>`;
+}
+
+function exercise(title, sections, prefix, teaching) {
+  const hasPracticeAudio = sections.some(section => section.kind === 'dictation');
+  const practice = `<p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
     <form class="exercise">
-      ${sections.map((section, index) => section.kind === 'registration' ? '' :
+      ${sections.map((section, index) => ['registration', 'audio'].includes(section.kind) ? '' :
         sectionHtml(section, `${prefix}-${index}`)).join('')}
-      ${hasAudio ? '<p class="status audio-status" role="status"></p>' : ''}
+      ${hasPracticeAudio ? '<p class="status audio-status" role="status"></p>' : ''}
       <button class="primary" type="submit">Check answers</button>
       <p class="status score-status" role="status"></p>
     </form>
     ${sections.map((section, index) => section.kind === 'registration' ?
-      registration(section.title, `${prefix}-${index}`) : '').join('')}
+      registration(section.title, `${prefix}-${index}`) : '').join('')}`;
+  return `<section class="activity">
+    <h2>${title}</h2>
+    ${teaching ? `${teachingHtml(teaching, sections.filter(section => section.kind === 'audio'))}
+      <details class="practice">
+        <summary><span class="practice-start">Start practice</span><span class="practice-hide">Hide practice</span></summary>
+        ${practice}
+      </details>` : practice}
   </section>`;
 }
 
 function homePage() {
+  const startedBasics = basicsKeys.flat().some(key => solved.has(key));
+  const basicsAction = basicsKeys.every(complete) ? 'Review the basics' :
+    startedBasics ? 'Continue the basics' : 'Start from zero';
   return `<section class="hero">
     <div>
       <h1 lang="de">Hallo, <span>Deutsch!</span></h1>
-      <p>Start learning German with Chapters 1 and 2 of Netzwerk neu A1.1. Practice saying hello, introducing yourself, and making plans with friends.</p>
+      <p>New to German? Learn a few letters, numbers, and words first. Then say hello and introduce yourself before moving on to the chapters.</p>
+      <a class="primary hero-start" href="#basics">${basicsAction} →</a>
     </div>
     <div class="word-art" aria-hidden="true"><span>Guten Tag!</span><span>Hallo!</span></div>
   </section>
@@ -257,13 +300,33 @@ function homePage() {
 
 function chapterPage(chapter, topic) {
   const { title, intro, modules } = chapters[chapter];
+  const module = modules[topic];
   return `<h1 class="page-title">Chapter ${chapter + 1} · ${german(title)}</h1><p class="intro">${intro}</p>
     <div class="workspace">
       <nav class="topics" aria-label="Topics in Chapter ${chapter + 1}">
         ${modules.map((module, index) => `<a href="#kapitel-${chapter + 1}/${index + 1}" ${index === topic ? 'aria-current="page"' : ''}>
           ${chapter + 1}.${index + 1} ${module.title}<span data-done="${index}"></span></a>`).join('')}
       </nav>
-      ${exercise(modules[topic].title, modules[topic].sections, `c${chapter}-${topic}`)}
+      ${exercise(module.title, module.sections, `c${chapter}-${topic}`, module.teaching)}
+    </div>`;
+}
+
+function basicsPage(step) {
+  const lesson = basics[step];
+  const next = step + 1 < basics.length ?
+    `<a class="primary" href="#basics/${step + 2}">Next: ${basics[step + 1].title} →</a>` :
+    '<a class="primary" href="#kapitel-1">Continue to Chapter 1 →</a>';
+  return `<h1 class="page-title">German from zero</h1>
+    <p class="intro">Lesson ${step + 1} of ${basics.length}. Learn the examples first, then try two quick questions.</p>
+    <div class="workspace">
+      <nav class="topics" aria-label="Basics lessons">
+        ${basics.map(({ title }, index) => `<a href="#basics/${index + 1}" ${index === step ? 'aria-current="page"' : ''}>
+          ${index + 1}. ${title}<span data-done="${index}"></span></a>`).join('')}
+      </nav>
+      <div class="lesson-main">
+        ${exercise(lesson.title, lesson.sections, `b-${step}`, lesson.teaching)}
+        <div class="row lesson-next">${next}</div>
+      </div>
     </div>`;
 }
 
@@ -367,11 +430,14 @@ function showPage(moveFocus = true) {
   const showReference = requested === 'cheat-sheet';
   const route = showReference ? (currentPage || 'home') : requested;
   const chapter = route.match(/^kapitel-([12])(?:\/([1-5]))?$/);
-  const page = chapter ? route : ['wg-story', 'daily-drill'].includes(route) ? route : 'home';
+  const starter = route.match(/^basics(?:\/([1-5]))?$/);
+  const step = starter ? (starter[1] ? Number(starter[1]) - 1 : firstUnfinishedLesson()) : -1;
+  const page = starter ? `basics/${step + 1}` : chapter || ['wg-story', 'daily-drill'].includes(route) ? route : 'home';
   if (page !== currentPage) {
     currentPage = page;
-    activeInput = undefined;
-    if (chapter) {
+    if (starter) {
+      content.innerHTML = basicsPage(step);
+    } else if (chapter) {
       chapterIndex = Number(chapter[1]) - 1;
       const lastTopic = chapters[chapterIndex].modules.length - 1;
       const topic = chapter[2] ? Math.min(Number(chapter[2]) - 1, lastTopic) : moduleChoices[chapterIndex];
@@ -380,12 +446,17 @@ function showPage(moveFocus = true) {
     } else {
       content.innerHTML = page === 'wg-story' ? storyPage() : page === 'daily-drill' ? drillPage() : homePage();
     }
-    const parentPage = chapter ? `kapitel-${chapter[1]}` : page;
+    const parentPage = starter ? 'basics' : chapter ? `kapitel-${chapter[1]}` : page;
     document.querySelectorAll('.header-inner nav a').forEach(link => {
       if (link.hash === `#${parentPage}`) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
     updateProgress();
+    const selectedTopic = content.querySelector('.topics [aria-current="page"]');
+    if (selectedTopic) {
+      const topics = selectedTopic.parentElement;
+      topics.scrollLeft = selectedTopic.offsetLeft - (topics.clientWidth - selectedTopic.offsetWidth) / 2;
+    }
     if (moveFocus && !showReference) {
       window.scrollTo(0, 0);
       content.focus({ preventScroll: true });
@@ -458,7 +529,7 @@ content.addEventListener('submit', event => {
 });
 
 function speak(button) {
-  const status = button.closest('form').querySelector('.audio-status');
+  const status = button.closest('form, .lesson').querySelector('.audio-status');
   const hint = 'To play the audio, enable a German voice in your browser or device settings.';
   if (!('speechSynthesis' in window)) {
     status.textContent = hint;
@@ -574,21 +645,4 @@ content.addEventListener('input', event => {
   } else if (input.matches('.registration input')) {
     input.setCustomValidity('');
   }
-});
-
-// Remember the last text box so the floating keyboard works after a click or Tab.
-document.addEventListener('focusin', event => {
-  if (event.target.matches('input[type="text"], textarea')) activeInput = event.target;
-  else if (!keyboard.contains(event.target)) activeInput = undefined;
-});
-keyboard.addEventListener('pointerdown', event => {
-  if (event.target.matches('button') && activeInput) event.preventDefault();
-});
-keyboard.addEventListener('click', event => {
-  if (!event.target.matches('button') || !activeInput?.isConnected) return;
-  const input = activeInput;
-  const start = input.selectionStart;
-  input.setRangeText(event.target.textContent, start, input.selectionEnd, 'end');
-  input.focus();
-  input.dispatchEvent(new Event('input', { bubbles: true }));
 });

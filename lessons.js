@@ -21,6 +21,95 @@ const conjugation = {
   haben: ['habe', 'hast', 'hat', 'haben', 'habt', 'haben'],
 };
 
+const basics = [
+  {
+    title: 'First letters',
+    teaching: [{
+      title: 'A, B, C, D',
+      text: 'German uses the same A–Z alphabet as English, but some letters have different names. Listen and repeat the first four.',
+      translationHeading: 'Sounds like',
+      examples: [
+        ['A', 'ah, like the a in “father”', 'a'],
+        ['B', 'beh, with a steady “eh” sound', 'be'],
+        ['C', 'tseh, starting with “ts”', 'tse'],
+        ['D', 'deh, with the same vowel as B', 'de'],
+      ],
+    }],
+    sections: [
+      { title: 'Listen to letters E–Z', kind: 'audio', items: alphabet.slice(4).map((letter, index) => [letter, letterNames[index + 4]]) },
+      { title: 'Match the sound to the letter.', promptLanguage: 'en', choices: alphabet.slice(0, 4), questions: [
+        ['Which letter sounds like “ah”?', 'A', 'It is the first letter of the alphabet.'],
+        ['Which letter sounds like “tseh”?', 'C', 'The third letter has a “ts” sound in its German name.'],
+      ] },
+    ],
+  },
+  {
+    title: 'Numbers 0–10',
+    teaching: [{
+      title: 'Count in German',
+      text: 'Start at null (zero). Say each number out loud, then try counting from one to ten.',
+      translationHeading: 'Number',
+      examples: numbersTo20.slice(0, 11).map((word, number) => [word, String(number)]),
+    }],
+    sections: [
+      { title: 'Choose the German word for each number.', promptLanguage: 'en', choices: ['null', 'zwei', 'sieben', 'zehn'], questions: [
+        ['Which word means 2?', 'zwei'], ['Which word means 7?', 'sieben'],
+      ] },
+    ],
+  },
+  {
+    title: 'Everyday words',
+    teaching: [{
+      title: 'Six words you can use right away',
+      text: 'Start with yes and no. Bitte can mean “please” when asking for something or “you’re welcome” after danke.',
+      examples: [
+        ['ja', 'yes'], ['nein', 'no'], ['bitte', 'please / you’re welcome'], ['danke', 'thank you'],
+        ['ich', 'I'], ['du', 'you, when talking to one person informally'],
+      ],
+    }],
+    sections: [
+      { title: 'Choose the German word.', promptLanguage: 'en', choices: ['ja', 'nein', 'bitte', 'danke'], questions: [
+        ['How do you say “yes”?', 'ja'], ['How do you say “thank you”?', 'danke'],
+      ] },
+    ],
+  },
+  {
+    title: 'Hello and goodbye',
+    teaching: [{
+      title: 'Greet someone and say goodbye',
+      text: 'Hallo is a handy hello. The other greetings depend on the time of day. Tschüss is a casual goodbye.',
+      examples: [
+        ['Hallo!', 'Hello!'], ['Guten Morgen!', 'Good morning!'], ['Guten Tag!', 'Good day!'],
+        ['Guten Abend!', 'Good evening!'], ['Tschüss!', 'Bye!'],
+      ],
+    }],
+    sections: [
+      { title: 'Choose a greeting or goodbye.', promptLanguage: 'en', choices: ['Hallo!', 'Guten Morgen!', 'Guten Abend!', 'Tschüss!'], questions: [
+        ['How do you say “Good morning”?', 'Guten Morgen!', 'Morgen means morning here.'],
+        ['How do you say “Bye” to a friend?', 'Tschüss!'],
+      ] },
+    ],
+  },
+  {
+    title: 'Name and hometown',
+    teaching: [{
+      title: 'Introduce yourself in two sentences',
+      text: 'Ich means “I.” Use Ich bin followed by your name, and Ich komme aus followed by the city you’re from.',
+      examples: [
+        ['Ich bin Anthony.', 'I am Anthony.'],
+        ['Ich komme aus Berlin.', 'I am from Berlin.'],
+        ['Ich bin Emma. Ich komme aus Paris.', 'I am Emma. I am from Paris.'],
+      ],
+    }],
+    sections: [
+      { title: 'Fill in the missing word.', promptLanguage: 'en', choices: ['bin', 'komme', 'aus'], questions: [
+        ['I am Emma. → Ich … Emma.', 'bin', 'Ich bin means “I am.”'],
+        ['I am from Paris. → Ich komme … Paris.', 'aus', 'Aus means “from.”'],
+      ] },
+    ],
+  },
+];
+
 const chapters = [
   {
     title: 'Guten Tag!',
@@ -28,6 +117,28 @@ const chapters = [
     modules: [
       {
         title: 'Greetings and introductions',
+        teaching: [
+          {
+            title: 'Choose a greeting',
+            text: 'Hallo works with friends and classmates. Guten Tag is a polite greeting you can use with someone you’ve just met.',
+            examples: [
+              ['Hallo, Emma!', 'Hi, Emma!'],
+              ['Guten Tag, Herr Fischer!', 'Good day, Mr. Fischer!'],
+              ['Tschüss!', 'Bye! (casual)'],
+              ['Auf Wiedersehen!', 'Goodbye! (polite)'],
+            ],
+          },
+          {
+            title: 'Ask how someone is',
+            text: 'Du is the informal “you.” Sie, with a capital S, is the formal “you.” Dir and Ihnen are the corresponding forms in these greetings.',
+            examples: [
+              ['Wie geht’s dir?', 'How are you? (informal)'],
+              ['Wie geht es Ihnen?', 'How are you? (formal)'],
+              ['Gut, danke. Und dir?', 'Good, thanks. And you? (informal)'],
+              ['Gut, danke. Und Ihnen?', 'Good, thanks. And you? (formal)'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Du or Sie? Sort the greetings.', hint: 'Both mean “you.” Use informal du with friends and family. Use formal Sie in polite situations, such as addressing someone by title and last name.', choices: ['Informell (du)', 'Formell (Sie)'], questions: [
             ['Hallo, Mia! Wie geht’s dir?', 'Informell (du)', 'Hi, Mia! How are you? Notice the first name and casual greeting.'],
@@ -45,6 +156,26 @@ const chapters = [
       },
       {
         title: 'Alphabet, numbers, and email',
+        teaching: [
+          {
+            title: 'Listen for these letter names',
+            text: 'When you spell a name or an email address, use the German letter names. V, W, and Z can be easy to mix up.',
+            translationHeading: 'Sounds like',
+            examples: [['V', 'fow, rhyming with “cow”', 'fau'], ['W', 'veh', 'we'], ['Z', 'tset', 'tset']],
+          },
+          {
+            title: 'Count past ten',
+            text: 'Eleven and twelve have their own names. From thirteen to nineteen, listen for the ending -zehn.',
+            translationHeading: 'Number',
+            examples: numbersTo20.slice(11).map((word, index) => [word, String(index + 11)]),
+          },
+          {
+            title: 'Spell an email address',
+            text: 'Say each letter separately. For mia.n@example.de, say “M I A, Punkt, N, ät, E X A M P L E, Punkt, D E.” Listen for these symbols:',
+            translationHeading: 'Symbol',
+            examples: [['Unterstrich', '_ (underscore)'], ['ät', '@ (at sign)'], ['minus', '- (hyphen)'], ['Punkt', '. (dot)']],
+          },
+        ],
         sections: [
           { title: 'Listen to the alphabet', hint: 'Choose a letter to hear its name in German.', kind: 'audio', items: alphabet.map((letter, index) => [letter, letterNames[index]]) },
           { title: 'Listen to numbers from 0 to 20', kind: 'audio', items: numbersTo20.map((word, number) => [number, word]) },
@@ -56,6 +187,36 @@ const chapters = [
       },
       {
         title: 'Countries and languages',
+        teaching: [
+          {
+            title: 'Say where you’re from and what you speak',
+            text: 'Use Ich komme aus for where you’re from. Use Ich spreche for a language you speak.',
+            examples: [
+              ['Ich komme aus Berlin.', 'I’m from Berlin.'],
+              ['Ich komme aus Paris.', 'I’m from Paris.'],
+              ['Ich spreche Deutsch.', 'I speak German.'],
+              ['Ich spreche Französisch.', 'I speak French.'],
+            ],
+          },
+          {
+            title: 'Use the right article after aus',
+            text: comingFromRule,
+            examples: [
+              ['aus Frankreich', 'from France'],
+              ['aus der Schweiz', 'from Switzerland'],
+              ['aus den USA', 'from the USA'],
+            ],
+          },
+          {
+            title: 'Learn some countries and languages',
+            text: 'The words for a country and its language are often related, but there are exceptions. In Brazil, for example, the main language is Portuguese.',
+            examples: [
+              ['Österreich · Deutsch', 'Austria · German'], ['Spanien · Spanisch', 'Spain · Spanish'],
+              ['Japan · Japanisch', 'Japan · Japanese'], ['die Türkei · Türkisch', 'Türkiye · Turkish'],
+              ['Brasilien · Portugiesisch', 'Brazil · Portuguese'], ['Polen · Polnisch', 'Poland · Polish'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Match each country to a language.', kind: 'matching', choices: ['Deutsch', 'Spanisch', 'Japanisch', 'Türkisch', 'Portugiesisch', 'Polnisch'], questions: [
             ['Österreich', 'Deutsch', 'Österreich means Austria.'], ['Spanien', 'Spanisch', 'Spanien means Spain.'], ['Japan', 'Japanisch'],
@@ -71,6 +232,24 @@ const chapters = [
       },
       {
         title: 'Verb forms and word order',
+        teaching: [
+          {
+            title: 'Meet five useful verbs',
+            text: 'Start with ich (I). A different subject often changes the verb ending. For example, ich lerne (I learn) becomes du lernst (you learn). Sein is irregular: ich bin, du bist.',
+            examples: [
+              ['Ich bin müde.', 'I am tired.'],
+              ['Ich heiße Emma.', 'My name is Emma.'],
+              ['Ich komme aus Paris.', 'I am from Paris.'],
+              ['Ich wohne in Berlin.', 'I live in Berlin.'],
+              ['Ich spreche Deutsch.', 'I speak German.'],
+            ],
+          },
+          {
+            title: 'Put the verb second',
+            text: 'In a simple statement, put the subject first. In a question with a question word, put that word or phrase first. The verb comes right after it.',
+            examples: [['Du wohnst in Berlin.', 'You live in Berlin.'], ['Wo wohnst du?', 'Where do you live?']],
+          },
+        ],
         sections: [
           {
             title: 'Fill in the correct verb forms.',
@@ -96,6 +275,25 @@ const chapters = [
     modules: [
       {
         title: 'Hobbies and preferences',
+        teaching: [
+          {
+            title: 'Learn the hobby words',
+            examples: [
+              ['fotografieren', 'to take photos'], ['singen', 'to sing'], ['kochen', 'to cook'], ['schwimmen', 'to swim'],
+              ['reisen', 'to travel'], ['tanzen', 'to dance'], ['joggen', 'to jog'], ['lesen', 'to read'],
+            ],
+          },
+          {
+            title: 'Say what you like doing',
+            text: 'Put gern after the verb to say you like doing something. Use sehr gern for “really like” and nicht so gern for “don’t really like.”',
+            examples: [
+              ['Ich koche gern.', 'I like cooking.'],
+              ['Ich schwimme sehr gern.', 'I really like swimming.'],
+              ['Ich jogge nicht so gern.', 'I don’t really like jogging.'],
+              ['Es geht so.', 'It’s okay.'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Choose the verb that matches each photo.', kind: 'pictures', choices: hobbies, questions: [
             ['A person with a book', 'lesen'], ['A camera photographing flowers', 'fotografieren'],
@@ -108,6 +306,24 @@ const chapters = [
       },
       {
         title: 'Weekdays and making plans',
+        teaching: [
+          {
+            title: 'Learn the days of the week',
+            text: 'Start the week with Montag. To say “on” a day, put am before it, as in am Montag.',
+            examples: weekdays.map((day, index) => [day, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index]]),
+          },
+          {
+            title: 'Invite someone and pick a day',
+            text: 'Start with an invitation, suggest a day, and say whether it works for you.',
+            examples: [
+              ['Gehen wir ins Café?', 'Shall we go to the café?'],
+              ['Am Samstag?', 'On Saturday?'],
+              ['Ja, gern!', 'Yes, I’d love to!'],
+              ['Ja, super!', 'Yes, great!'],
+              ['Nein, das geht leider nicht.', 'No, unfortunately that doesn’t work.'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Put the seven days of the week in order.', kind: 'order', questions: [['Beginne mit Montag.', weekdays, 'Start with Montag (Monday). Dienstag is Tuesday, and Sonntag is Sunday.']] },
           { title: 'Make plans with Mia.', kind: 'chat', hint: 'Choose a reply for each message. Open Hint for a translation and what you want to say.', choices: ['Ja, gern!', 'Am Freitag?', 'Nein, das geht leider nicht.', 'Ja, super!'], questions: [
@@ -120,6 +336,36 @@ const chapters = [
       },
       {
         title: 'Jobs, articles, and plurals',
+        teaching: [
+          {
+            title: 'Learn each noun with its article',
+            text: 'Der, das, and die all mean “the.” Learn the article together with each noun. In the plural, the article is always die. The noun itself may also change, for example das Buch → die Bücher.',
+            examples: [
+              ['der Stift', 'the pen'], ['das Buch', 'the book'], ['die Tablette', 'the pill'],
+              ['das Auto', 'the car'], ['die Rechnung', 'the bill'], ['der Schlüssel', 'the key'],
+            ],
+          },
+          {
+            title: 'Talk about jobs',
+            text: 'Many job titles add -in for the feminine form. Arzt also changes its vowel to ä. Compare these pairs:',
+            examples: [
+              ['der Arzt / die Ärztin', 'doctor'],
+              ['der Kellner / die Kellnerin', 'waiter / waitress'],
+              ['der Lehrer / die Lehrerin', 'teacher'],
+              ['der Krankenpfleger / die Krankenpflegerin', 'nurse'],
+            ],
+          },
+          {
+            title: 'Recognize common plural endings',
+            text: 'Some plurals add -e, -en, or -s. Others add -er and may change a vowel. Learn each noun with its plural.',
+            examples: [
+              ['der Arzt → die Ärzte', 'doctor → doctors'],
+              ['die Tablette → die Tabletten', 'pill → pills'],
+              ['das Auto → die Autos', 'car → cars'],
+              ['das Buch → die Bücher', 'book → books'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Sort the nouns by their article.', hint: 'Drag a noun to its article, or select the noun and then choose a bucket.', lesson: 'Der, das, and die all mean “the.” Learn each singular noun with its article: der for masculine, das for neuter, and die for feminine.', kind: 'articles', questions: [
             ['Stift', 'der', 'Stift means “pen.” It is masculine.'], ['Buch', 'das', 'Buch means “book.” It is neuter.'], ['Tablette', 'die', 'Tablette means “tablet” or “pill.” It is feminine.'],
@@ -137,6 +383,26 @@ const chapters = [
       },
       {
         title: 'Numbers and sport club',
+        teaching: [
+          {
+            title: 'Build numbers from 20 onward',
+            text: 'For two-digit numbers like 24, say the ones, then und (“and”), then the tens. For 21, 31, etc., use ein before und. For hundreds, say the hundreds part first, then build the rest the same way. Write it all as one word.',
+            examples: [
+              ['vierundzwanzig', '24 = four + and + twenty'],
+              ['sechsundfünfzig', '56 = six + and + fifty'],
+              ['dreißig / sechzig / siebzig', '30 / 60 / 70'],
+              ['dreihundertfünfundvierzig', '345 = three hundred + five + and + forty'],
+            ],
+          },
+          {
+            title: 'Read the form labels',
+            text: 'A club form asks for your name, date of birth, address, and your preferred class and day. Use made-up details in the practice form.',
+            examples: [
+              ['Vorname', 'first name'], ['Familienname', 'last name'], ['Geburtsdatum', 'date of birth'],
+              ['Adresse', 'address'], ['Kurs', 'class / course'], ['Tag', 'day'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Write each number in German.', lesson: 'For numbers like 24, put the ones first: vier + und + zwanzig makes vierundzwanzig. Write it as one word.', questions: [
             ['22', 'zweiundzwanzig'], ['36', 'sechsunddreißig'], ['71', 'einundsiebzig'],
@@ -147,6 +413,26 @@ const chapters = [
       },
       {
         title: 'Verb changes and yes/no questions',
+        teaching: [
+          {
+            title: 'Notice how the verb changes',
+            text: 'In lesen (to read) and sprechen (to speak), the vowel changes with du and er/sie. Haben (to have) and sein (to be) have special forms to learn.',
+            examples: [
+              ['ich lese → du liest', 'I read → you read'],
+              ['ich spreche → er spricht', 'I speak → he speaks'],
+              ['du hast / wir haben', 'you have / we have'],
+              ['du bist / wir sind', 'you are / we are'],
+            ],
+          },
+          {
+            title: 'Move the verb to the front for a yes/no question',
+            text: 'The words can stay the same. Put the verb first and the subject second to turn a statement into a question.',
+            examples: [
+              ['Du wohnst in Berlin.', 'You live in Berlin.'],
+              ['Wohnst du in Berlin?', 'Do you live in Berlin?'],
+            ],
+          },
+        ],
         sections: [
           { title: 'Fill in the correct verb form.', lesson: 'Some verbs change their stem vowel with du and er/sie. For lesen (to read), ich lese becomes er liest. Haben (to have) and sein (to be) also have irregular forms.', questions: [
             ['Du … ein Buch. (lesen)', 'liest'], ['Er … Deutsch. (sprechen)', 'spricht'],
