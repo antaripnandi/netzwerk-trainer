@@ -200,6 +200,14 @@ function listenButton(label, spoken, text = label) {
   return `<button class="tile" type="button" data-say="${escapeHtml(spoken)}" aria-label="Listen to ${escapeHtml(label)}">${escapeHtml(text)}</button>`;
 }
 
+function audioSpeedPicker() {
+  return `<fieldset class="audio-speed">
+    <legend>Playback speed</legend>
+    <label><input type="radio" name="audio-speed" value="1" ${audioRate === 1 ? 'checked' : ''}> Normal</label>
+    <label><input type="radio" name="audio-speed" value="${slowRate}" ${audioRate === slowRate ? 'checked' : ''}> Slow</label>
+  </fieldset>`;
+}
+
 function sectionHtml(section, prefix) {
   let body;
   if (section.kind === 'preference') {
@@ -231,6 +239,7 @@ function sectionHtml(section, prefix) {
 
 function teachingHtml(blocks, audio) {
   return `<section class="lesson" aria-label="Learn">
+    ${audioSpeedPicker()}
     <p class="status audio-status" role="status"></p>
     ${blocks.map(({ title, text, examples, translationHeading = 'English' }) => `<section class="lesson-block">
       <h3>${title}</h3>
@@ -251,6 +260,7 @@ function exercise(title, sections, prefix) {
   return `<section class="activity">
     <h2>${title}</h2>
     <p class="hint">Stuck on a question? Open its hint for a translation or a clue.</p>
+    ${hasPracticeAudio ? audioSpeedPicker() : ''}
     <form class="exercise">
       ${sections.map((section, index) => ['registration', 'audio'].includes(section.kind) ? '' :
         sectionHtml(section, `${prefix}-${index}`)).join('')}
@@ -420,6 +430,8 @@ document.querySelector('#reference-content').innerHTML = `<section class="refere
 
 const player = new Audio();
 let playback = 0;
+const slowRate = .72;
+let audioRate = 1;
 
 function stopAudio() {
   playback++;
@@ -533,7 +545,10 @@ function renderQuiz() {
     <form class="quiz-form">
       ${question.picture ? `<img class="quiz-photo" src="${question.picture}" alt="${escapeHtml(question.prompt)}">` :
         question.prompt && !question.order ? `<p class="quiz-prompt">${question.english ? escapeHtml(question.prompt) : german(question.prompt)}</p>` : ''}
-      ${question.audio ? `<div class="row"><button class="tile" type="button" data-say="${escapeHtml(question.audio)}">Replay audio</button></div>
+      ${question.audio ? `<div class="row" role="group" aria-label="Play audio">
+        <button class="tile" type="button" data-say="${escapeHtml(question.audio)}" data-rate="1">Play normal</button>
+        <button class="tile" type="button" data-say="${escapeHtml(question.audio)}" data-rate="${slowRate}">Play slow</button>
+        </div>
         <p class="status audio-status" role="status"></p>` : ''}
       ${response}
       ${test ? '' : questionHint('this question', question.order ? question.answer.join(' ') : question.answer, question.hint)}
@@ -542,7 +557,7 @@ function renderQuiz() {
     </form>
   </section>`;
   focusContent();
-  const replay = content.querySelector('.quiz-form [data-say]');
+  const replay = content.querySelector(`.quiz-form [data-rate="${audioRate}"]`);
   if (replay) speak(replay);
 }
 
@@ -665,7 +680,9 @@ function speak(button) {
   const status = button.closest('form, .lesson').querySelector('.audio-status');
   const request = ++playback;
   status.textContent = '';
-  player.src = audioFile(button.dataset.say);
+  if (button.dataset.rate) audioRate = Number(button.dataset.rate);
+  player.src = audioFile(button.dataset.say) + '?v=2';
+  player.playbackRate = audioRate;
   player.play().catch(error => {
     if (request === playback && status.isConnected) {
       const action = button.textContent.trim();
@@ -766,7 +783,10 @@ content.addEventListener('drop', event => {
 
 content.addEventListener('input', event => {
   const input = event.target;
-  if (input.id === 'hobby' || input.id === 'preference') {
+  if (input.name === 'audio-speed') {
+    audioRate = Number(input.value);
+    player.playbackRate = audioRate;
+  } else if (input.id === 'hobby' || input.id === 'preference') {
     const slider = document.querySelector('#preference');
     const rating = preferenceRatings[slider.value];
     const hobby = document.querySelector('#hobby').value;

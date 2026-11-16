@@ -32,6 +32,8 @@ def speech_text(text):
     letter = re.fullmatch(r"letter-([a-z])", text)
     if letter:
         return letter[1].upper()
+    if ", Punkt, " in text:
+        text = re.sub(r"\b[a-z](?: [a-z])*\b", lambda group: ", ".join(group[0].upper().split()), text)
     return re.sub(r"\bät\b", "@", text).replace(" → ", ", ").replace(" / ", ", ").replace(" · ", ", ")
 
 
@@ -49,7 +51,7 @@ def main():
 
     (ROOT / "audio").mkdir(exist_ok=True)
     voice = PiperVoice.load(args.model)
-    config = SynthesisConfig(length_scale=1.08)
+    config = SynthesisConfig(length_scale=1.27)
     with tempfile.TemporaryDirectory() as scratch:
         wav = Path(scratch) / "voice.wav"
         for relative_path, text in files.items():
@@ -59,7 +61,10 @@ def main():
             with wave.open(str(wav), "wb") as recording:
                 voice.synthesize_wav(speech_text(text), recording, config)
             subprocess.run(
-                ["ffmpeg", "-v", "error", "-y", "-i", str(wav), "-codec:a", "libmp3lame", "-b:a", "48k", str(output)],
+                [
+                    "ffmpeg", "-v", "error", "-y", "-i", str(wav),
+                    "-af", "adelay=120,apad=pad_dur=0.18", "-codec:a", "libmp3lame", "-b:a", "64k", str(output),
+                ],
                 check=True,
             )
     print(f"{len(files)} German audio clips available.")

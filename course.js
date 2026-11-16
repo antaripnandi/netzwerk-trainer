@@ -26,7 +26,7 @@ function vocabularyQuestions(blocks) {
       if (translationHeading === 'Sounds like') {
         return {
           heading: 'Which letter did you hear?',
-          answer: word, audio, choices: alphabet, hint: meaning.split(' · ')[1],
+          answer: word, audio, choices: alphabet, hint: meaning,
         };
       }
       return {
