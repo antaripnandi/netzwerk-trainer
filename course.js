@@ -78,5 +78,9 @@ function lessonQuestions(lesson) {
 function sampleQuestions(questions, limit) {
   const count = Math.min(limit, questions.length);
   // Sample from across the lesson so a short quiz still covers different topics.
-  return Array.from({ length: count }, (_, i) => questions[Math.floor((i + Math.random()) * questions.length / count)]);
+  return Array.from({ length: count }, (_, i) => {
+    const start = Math.floor(i * questions.length / count);
+    const end = Math.floor((i + 1) * questions.length / count);
+    return questions[start + Math.floor(Math.random() * (end - start))];
+  });
 }

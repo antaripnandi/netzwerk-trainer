@@ -27,6 +27,7 @@ html { scroll-padding: 7.5rem 0 2rem; }
 body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 ::selection { color: var(--ink); background: var(--lime); }
 :focus-visible { outline: 3px solid #805318; outline-offset: 3px; }
+.hero :focus-visible { outline-color: var(--lime); }
 a { color: inherit; text-underline-offset: 4px; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
@@ -38,7 +39,7 @@ p { line-height: 1.55; }
 .skip:focus { transform: none; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.site-header { position: sticky; top: 0; z-index: 3; background: var(--white); }
+.site-header { position: sticky; top: 0; z-index: 3; background: var(--white); box-shadow: 0 2px 8px #252a1c12; }
 .header-inner, .footer-inner { max-width: 76rem; margin: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding-block: .8rem; }
 .logo { font-size: 1.05rem; font-weight: 750; line-height: 1.15; text-decoration: none; white-space: nowrap; }
@@ -104,7 +105,7 @@ main:focus { outline: none; }
 .lesson-block tbody :is(th, td) { overflow-wrap: anywhere; }
 .lesson-block :is(th, td):last-child { width: 1%; text-align: right; white-space: nowrap; }
 .lesson-number { font-size: 1.3rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-.lesson-block .tile { min-height: 2rem; padding: .25rem .65rem; font-size: .85rem; background: var(--lime); }
+.lesson-block .tile { min-height: 2.75rem; padding: .4rem .65rem; font-size: .85rem; background: var(--lime); }
 .lesson-block .tile:hover { background: #cbd979; }
 .audio-speed { display: flex; gap: .4rem 1rem; flex-wrap: wrap; margin: .65rem 0 1rem; }
 .audio-speed legend { font-size: .9rem; margin-bottom: .25rem; }
@@ -126,6 +127,7 @@ main:focus { outline: none; }
 .quiz-options { display: grid; gap: .5rem; margin: .7rem 0; }
 .quiz-options label { display: flex; align-items: center; gap: .7rem; min-height: 2.75rem; padding: .55rem .75rem; background: var(--light); border-radius: .4rem; font-size: 1.1rem; overflow-wrap: anywhere; cursor: pointer; }
 .quiz-options label:has(:checked) { background: var(--lime); }
+.quiz-options label:has(:focus-visible) { outline: 3px solid #805318; outline-offset: 2px; }
 .quiz-options input[type="radio"] { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; flex: none; }
 .quiz-form input[type="text"] { font-size: 1.1rem; }
 .question-direction { display: block; margin: .3rem 0 .6rem; color: var(--muted); }
@@ -153,7 +155,7 @@ legend { padding: 0; margin-bottom: .65rem; font-weight: 750; font-size: 1.13rem
 .feedback[data-result="wrong"], .status[data-result="wrong"] { color: var(--bad); }
 .status { margin-top: .65rem; }
 input:not([type="range"]), select { width: 100%; min-width: 0; min-height: 2.75rem; padding: .55rem .65rem; color: var(--ink); background: var(--paper); border: 0; border-radius: .35rem; }
-input[aria-invalid="true"], select[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--bad); }
+:is(input, select, .noun, .order-output)[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--bad); }
 input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .row, .tiles { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
 .row { margin: .6rem 0; }
@@ -194,10 +196,17 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .story-quiz[open] > summary, .story-cast[open] > summary { margin-bottom: .75rem; }
 .story-quiz > summary { display: list-item; list-style-position: inside; width: fit-content; cursor: pointer; }
 .story-cast > summary { cursor: pointer; font-weight: 650; }
-.story-steps { justify-content: space-between; flex-wrap: wrap; }
+.story-steps { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 
 dialog { position: fixed; inset: 0 0 0 auto; width: min(100%, 57rem); height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; padding: 1.1rem clamp(1rem, 4vw, 2rem) 3rem; color: var(--ink); background: var(--white); }
 dialog::backdrop { background: #1f261a90; }
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open] { animation: open-reference .22s cubic-bezier(.16, 1, .3, 1); }
+  @keyframes open-reference {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+}
 .drawer-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .drawer-heading h2 { font: 400 clamp(2rem, 6vw, 3rem) 'Instrument Serif', Georgia, serif; }
 .drawer-heading small { display: block; font: 600 .9rem 'Segoe UI', sans-serif; color: var(--muted); }

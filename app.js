@@ -140,7 +140,7 @@ function ordering([prompt, words, hint], index, prefix, showHint = true, languag
   return `<div class="order">
     <p id="prompt-${key}" lang="${language}">${escapeHtml(prompt)}</p>
     ${showHint ? questionHint(`word order question ${index + 1}`, words, hint) : ''}
-    <div class="tiles order-output" role="group" aria-label="Your word order"></div>
+    <div class="tiles order-output" role="group" aria-label="Your word order" aria-describedby="feedback-${key}"></div>
     <div class="tiles order-choices" role="group" aria-labelledby="prompt-${key}">
       ${shuffled.map((word, i) => `<button type="button" class="tile" data-word="${i}" lang="de">${escapeHtml(word)}</button>`).join('')}
     </div>
@@ -245,9 +245,11 @@ function teachingHtml(blocks, audio) {
     ${blocks.map(({ title, text, examples, translationHeading = 'English' }) => `<section class="lesson-block">
       <h3>${title}</h3>
       ${text ? `<p>${escapeHtml(text)}</p>` : ''}
+      <div class="table-scroll" tabindex="0" role="region" aria-label="${escapeHtml(title)} vocabulary">
       ${table('', ['German', translationHeading, 'Audio'], examples.map(([word, translation, spoken = word]) =>
         [german(word), translationHeading === 'Number' ? `<span class="lesson-number">${escapeHtml(translation)}</span>` :
           escapeHtml(translation), listenButton(word, spoken, 'Listen')]))}
+      </div>
     </section>`).join('')}
     ${audio.map(section => `<details class="lesson-audio">
       <summary>${section.title}</summary>
@@ -543,15 +545,25 @@ reference.addEventListener('close', () => {
     referenceLink.focus();
   }
 });
+reference.addEventListener('click', event => {
+  if (event.target !== reference) return;
+  const bounds = reference.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right ||
+      event.clientY < bounds.top || event.clientY > bounds.bottom) reference.close();
+});
 window.addEventListener('hashchange', () => showPage());
 document.querySelector('.skip').addEventListener('click', event => {
   event.preventDefault();
-  content.focus();
+  focusContent();
 });
 showPage(false);
 
 function normalize(value) {
   return value.normalize('NFC').trim().toLocaleLowerCase('de').replace(/\s+/g, ' ').replace(/[.!?]$/, '');
+}
+
+function isAnswerCorrect(answer, expected) {
+  return [expected].flat().some(word => normalize(word) === normalize(answer));
 }
 
 function pickOptions(question) {
@@ -634,7 +646,7 @@ function gradeQuiz(form) {
     return;
   }
   const expected = question.order ? [question.answer.join(' ')] : [question.answer].flat();
-  const ok = expected.some(word => normalize(word) === normalize(answer));
+  const ok = isAnswerCorrect(answer, expected);
   if (ok) quiz.correct.push(question.id);
   if (quiz.test) {
     advanceQuiz();
@@ -657,6 +669,7 @@ function finishQuiz() {
   stopAudio();
   const { test, correct, total } = quiz;
   const success = correct.length >= Math.ceil(total * .8);
+  const reviewing = passed.has(currentLesson.route);
   if (success && !passed.has(currentLesson.route)) {
     passed.add(currentLesson.route);
     rememberCourse();
@@ -667,14 +680,16 @@ function finishQuiz() {
   }
   updateProgress();
   const next = nextLesson();
-  const heading = success ? 'Lesson complete' : test ? 'Test not passed' : 'Practice complete';
+  const heading = success ? 'Lesson complete' : test ? 'Test not passed' : reviewing ? 'Review complete' : 'Practice complete';
+  const goal = test ? ' Score at least 80% to test out.' : reviewing ?
+    ' Score at least 80% to pass this review.' : ' Score at least 80% to unlock the next lesson.';
   const action = !success ? `<button class="primary" type="button" data-course="${test ? 'test' : 'practice'}">Try again</button>` :
     next ? `<a class="primary" href="#${next.route}">Next: ${next.title} →</a>` : '<a class="primary" href="#home">Back to home</a>';
   quiz = null;
   referenceLink.hidden = false;
   content.innerHTML = `<section class="activity quiz-card">
     <h1>${heading}</h1>
-    <p>${correct.length} of ${total} correct.${!success ? (test ? ' Score at least 80% to test out.' : ' Score at least 80% to unlock the next lesson.') : ''}</p>
+    <p>${correct.length} of ${total} correct.${success ? '' : goal}</p>
     <div class="row lesson-actions">${action}
       <button class="secondary" type="button" data-course="learn">${success ? 'Back to lesson' : 'Review the lesson'}</button></div>
   </section>`;
@@ -688,7 +703,7 @@ function checkAnswers(form) {
   inputs.forEach(input => {
     const expected = [JSON.parse(input.dataset.answer)].flat();
     const answer = input.value.trim();
-    const ok = expected.some(word => normalize(word) === normalize(answer));
+    const ok = isAnswerCorrect(answer, expected);
     const message = document.getElementById(`feedback-${input.dataset.key}`);
     message.innerHTML = ok ? 'Correct!' : answer ? `Answer: ${german(expected[0])}` : 'No answer yet. Try the hint.';
     message.dataset.result = ok ? 'correct' : answer ? 'wrong' : '';
@@ -706,6 +721,16 @@ function checkAnswers(form) {
   rememberProgress();
 }
 
+function clearFeedback(input) {
+  if (!input.dataset.key) return;
+  const message = document.getElementById(`feedback-${input.dataset.key}`);
+  message.textContent = '';
+  message.removeAttribute('data-result');
+  const control = input.type === 'hidden' ? input.parentElement.querySelector('.noun, .order-output') : input;
+  control?.removeAttribute('aria-invalid');
+  input.closest('form').querySelector('.score-status')?.replaceChildren();
+}
+
 content.addEventListener('submit', event => {
   event.preventDefault();
   const form = event.target;
@@ -714,12 +739,10 @@ content.addEventListener('submit', event => {
   } else if (form.matches('.exercise')) {
     checkAnswers(form);
   } else if (form.matches('.registration')) {
-    const invalid = [...form.querySelectorAll('input[type="text"]')].find(input => !input.value.trim());
-    if (invalid) {
-      invalid.setCustomValidity('Please fill in this field.');
-      invalid.reportValidity();
-      return;
-    }
+    form.querySelectorAll('input[type="text"]').forEach(input => {
+      input.setCustomValidity(input.value.trim() ? '' : 'Please fill in this field.');
+    });
+    if (!form.reportValidity()) return;
     solved.add(form.dataset.registration);
     const status = form.querySelector('.status');
     status.innerHTML = `Practice form complete! ${german(form.querySelector('#course').value)} on ${german(form.querySelector('#course-day').value)}.`;
@@ -729,14 +752,17 @@ content.addEventListener('submit', event => {
 });
 
 function speak(button) {
-  const status = button.closest('form, .lesson').querySelector('.audio-status');
+  const status = button.closest('form, .lesson')?.querySelector('.audio-status');
   const request = ++playback;
-  status.textContent = '';
+  if (status) status.textContent = '';
   if (button.dataset.rate) audioRate = Number(button.dataset.rate);
-  player.src = audioFile(button.dataset.say) + '?v=2';
+  const source = new URL(audioFile(button.dataset.say) + '?v=2', document.baseURI).href;
+  if (player.src === source) player.currentTime = 0;
+  else player.src = source;
+  player.defaultPlaybackRate = audioRate;
   player.playbackRate = audioRate;
   player.play().catch(error => {
-    if (request === playback && status.isConnected) {
+    if (request === playback && status?.isConnected) {
       const action = button.textContent.trim();
       status.textContent = error.name === 'NotAllowedError' ?
         `Select “${action}” to play the audio.` : `The audio could not play. Select “${action}” to try again.`;
@@ -758,13 +784,17 @@ function moveWord(button) {
     button.disabled = true;
     (order.querySelector('.order-choices button:not(:disabled)') || pick).focus();
   }
-  order.querySelector('input').value = [...output.children].map(word => word.textContent).join(' ');
+  const input = order.querySelector('input');
+  input.value = [...output.children].map(word => word.textContent).join(' ');
+  clearFeedback(input);
 }
 
 function putInBucket(noun, bucket, moveFocus = false) {
   const fieldset = bucket.closest('fieldset');
   if (!noun || noun.closest('fieldset') !== fieldset) return;
-  document.getElementById(noun.dataset.noun).value = bucket.dataset.bucket;
+  const input = document.getElementById(noun.dataset.noun);
+  input.value = bucket.dataset.bucket;
+  clearFeedback(input);
   const nouns = [...fieldset.querySelectorAll('.noun')];
   nouns.forEach(button => {
     const article = document.getElementById(button.dataset.noun).value;
@@ -799,7 +829,7 @@ content.addEventListener('click', event => {
     newDrill();
     if (currentPage === 'daily-drill') {
       content.innerHTML = drillPage();
-      content.focus();
+      focusContent();
     } else location.hash = 'daily-drill';
   } else if (button.matches('[data-say]')) {
     speak(button);
@@ -835,6 +865,8 @@ content.addEventListener('drop', event => {
 
 content.addEventListener('input', event => {
   const input = event.target;
+  clearFeedback(input);
+  input.closest('.registration')?.querySelector('.status').replaceChildren();
   if (input.name === 'audio-speed') {
     audioRate = Number(input.value);
     player.playbackRate = audioRate;
