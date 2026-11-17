@@ -483,6 +483,11 @@ const roommates = [
   ['Luca', 'Aus München. Er arbeitet als Krankenpfleger.', 'From Munich. He works as a nurse.'],
   ['Max', 'Er ist oft in der Uni und schwimmt gern.', 'He’s often at the university and likes swimming.'],
 ];
+const speakerPortraits = {
+  ...Object.fromEntries(roommates.map(([name]) => [name, name.toLowerCase()])),
+  'Frau Müller': 'frau-mueller',
+};
+
 const storyScenes = [
   {
     chapter: 1, title: 'Anna arrives',

@@ -183,7 +183,9 @@ input[type="range"] { width: min(100%, 20rem); margin: .6rem 0; }
 .story-picker { display: grid; gap: .35rem; margin-bottom: 1rem; font-weight: 650; }
 .story-picker select { background: var(--white); }
 .dialogue { list-style: none; margin: 1rem 0 0; padding: 0; }
-.dialogue li { padding: .7rem 0; }
+.dialogue li { display: grid; grid-template-columns: 3rem minmax(0, 1fr); column-gap: .75rem; padding: .7rem 0; }
+.dialogue-copy { grid-column: 2; }
+.speaker-portrait { grid-area: 1 / 1; display: block; object-fit: cover; object-position: center 32%; border-radius: .4rem; }
 .dialogue li + li { margin-top: .15rem; }
 .dialogue strong { color: var(--green); font-size: .9rem; }
 .dialogue [lang="de"] { font-size: 1.12rem; }

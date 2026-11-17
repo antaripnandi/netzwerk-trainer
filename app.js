@@ -358,11 +358,17 @@ function storyPage(index) {
       <section class="activity" aria-labelledby="scene-title">
         <h2 id="scene-title">Scene ${number} · ${escapeHtml(scene.title)}</h2>
         <ol class="dialogue" role="list">
-          ${scene.lines.map(([speaker, line, translation]) => `<li>
-            <strong>${escapeHtml(speaker)}</strong>
-            <p lang="de">${escapeHtml(line)}</p>
-            <p class="translation">${escapeHtml(translation)}</p>
-          </li>`).join('')}
+          ${scene.lines.map(([speaker, line, translation]) => {
+            const portrait = speakerPortraits[speaker.split(' (')[0]];
+            return `<li>
+              ${portrait ? `<img class="speaker-portrait" src="photos/${portrait}.webp" alt="" width="48" height="48">` : ''}
+              <div class="dialogue-copy">
+                <strong>${escapeHtml(speaker)}</strong>
+                <p lang="de">${escapeHtml(line)}</p>
+                <p class="translation">${escapeHtml(translation)}</p>
+              </div>
+            </li>`;
+          }).join('')}
         </ol>
         ${scene.note ? `<p class="hint">${escapeHtml(scene.note)}</p>` : ''}
       </section>
@@ -378,12 +384,11 @@ function storyPage(index) {
     <details class="story-cast">
       <summary>Meet the roommates</summary>
       <div class="people">${roommates.map(([name, bio, translation]) => `<article class="person">
-        <img src="photos/${name.toLowerCase()}.webp" alt="" width="162" height="184">
+        <img src="photos/${speakerPortraits[name]}.webp" alt="" width="162" height="184">
         <h2>${name}</h2><p lang="de">${bio}</p><p class="translation">${translation}</p>
       </article>`).join('')}</div>
-      <p class="reference-source">Photos from ${german('Netzwerk neu A1, Kursbuch')}, © Ernst Klett Sprachen.</p>
     </details>
-    <p class="reference-source">Short practice dialogues adapted from ${german('Netzwerk neu A1')}, Chapters 1–6.
+    <p class="reference-source">Practice dialogues adapted from ${german('Netzwerk neu A1')}, Chapters 1–6. Portraits from the coursebook, © Ernst Klett Sprachen.
       <a href="${storySource}" target="_blank" rel="noopener">Klett’s original German transcript (PDF)</a>
     </p>`;
 }
