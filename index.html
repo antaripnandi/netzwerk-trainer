@@ -28,7 +28,10 @@
         <a href="#cheat-sheet" id="reference-link">Reference</a>
       </nav>
       <div class="score" aria-live="polite">
-        <span id="xp">0 XP</span>
+        <details class="progress-options">
+          <summary id="xp" title="Progress options">0 XP</summary>
+          <button class="secondary" id="reset-progress" type="button">Reset progress</button>
+        </details>
         <div>
           <span id="progress-label">Chapter 1 · 0%</span>
           <progress id="progress" value="0" max="100" aria-labelledby="progress-label"></progress>

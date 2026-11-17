@@ -558,6 +558,34 @@ document.querySelector('.skip').addEventListener('click', event => {
 });
 showPage(false);
 
+const progressOptions = document.querySelector('.progress-options');
+document.querySelector('#reset-progress').addEventListener('click', () => {
+  progressOptions.open = false;
+  if (!window.confirm('Reset all XP and completed lessons? You will start again from the first lesson.')) {
+    document.querySelector('#xp').focus();
+    return;
+  }
+  try {
+    localStorage.removeItem(progressKey);
+    localStorage.removeItem(courseKey);
+  } catch {
+    window.alert('Progress could not be cleared. Check your browser storage settings and try again.');
+    return;
+  }
+  stopAudio();
+  location.hash = 'home';
+  location.reload();
+});
+document.addEventListener('click', event => {
+  if (!progressOptions.contains(event.target)) progressOptions.open = false;
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && progressOptions.open) {
+    progressOptions.open = false;
+    document.querySelector('#xp').focus();
+  }
+});
+
 function normalize(value) {
   return value.normalize('NFC').trim().toLocaleLowerCase('de').replace(/\s+/g, ' ').replace(/[.!?]$/, '');
 }
